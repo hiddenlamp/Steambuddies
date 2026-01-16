@@ -13,23 +13,20 @@ const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const courseRoutes = require("./routes/courses.routes");
 const activitiesRoutes = require("./routes/activities.routes");
-
-// ✅ NEW: notes routes
 const notesRoutes = require("./routes/notes.routes");
 
 const app = express();
 
 /** ============ Core middleware ============ */
-// ✅ IMPORTANT: allow cross-origin images/videos/files from this server
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    // Optional hardening (safe defaults)
-    contentSecurityPolicy: false, // keep off unless you configure CSP properly
+    // keep off unless you configure CSP properly
+    contentSecurityPolicy: false,
   })
 );
 
-app.use(express.json({ limit: "10mb" })); // notes meta + other payloads
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
@@ -45,31 +42,31 @@ const finalAllowed = [...new Set([...allowedOrigins, ...devFallback])];
 
 const corsOptions = {
   origin(origin, callback) {
-    // allow mobile apps / server-to-server / curl
+    // allow server-to-server/curl/mobile apps
     if (!origin) return callback(null, true);
     if (finalAllowed.includes(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked for origin: ${origin}`), false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Accept",
+    "X-Requested-With",
+    "Cookie",
+  ],
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// ✅ safer than "*"
+app.options(/.*/, cors(corsOptions));
 
-/** ============ Static uploads (IMPORTANT) ============ */
-/**
- * ✅ Your app already serves /uploads
- * For Notes PDF download, we will use:
- * - direct static:   /uploads/<filename>  (optional)
- * - secure endpoint: /api/notes/download/:id  (recommended)
- */
+/** ============ Static uploads ============ */
 app.use(
   "/uploads",
   (req, res, next) => {
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    // PDFs are often opened in new tab; this helps
     res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
     next();
   },
@@ -87,7 +84,11 @@ app.use(
   })
 );
 
-/** ============ Health ============ */
+/** ============ Root + Health ============ */
+app.get("/", (req, res) => {
+  res.status(200).send("SteamBuddies Backend Running ✅");
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "SteamBuddies API is healthy ✅" });
 });
@@ -97,8 +98,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/activities", activitiesRoutes);
-
-// ✅ NOTES (Educator upload + Student list + Download)
 app.use("/api/notes", notesRoutes);
 
 /** ============ 404 + error handler ============ */
