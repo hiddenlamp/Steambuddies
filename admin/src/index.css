@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: #F6F7FF; /* Light theme fallback */
+}
+.dark body {
+  background-color: #030008; /* Super dark, rich premium black */
+}
+
+/* ===== Hide Scrollbar Globally ===== */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}

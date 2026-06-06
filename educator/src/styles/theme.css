@@ -1,0 +1,86 @@
+/* =============================================
+   src/styles/theme.css
+   Global CSS Design Tokens — Light & Dark Mode
+   ============================================= */
+
+:root {
+  /* Brand Colors */
+  --color-primary:        #6c63ff;
+  --color-primary-light:  #8b83ff;
+  --color-primary-dark:   #4b44cc;
+  --color-secondary:      #ff6584;
+  --color-accent:         #43e97b;
+
+  /* Background */
+  --bg-base:              #f5f7fa;
+  --bg-surface:           #ffffff;
+  --bg-surface-2:         #f0f2f5;
+  --bg-overlay:           rgba(0, 0, 0, 0.4);
+
+  /* Text */
+  --text-primary:         #1a1a2e;
+  --text-secondary:       #4a4a6a;
+  --text-muted:           #9090a8;
+  --text-inverse:         #ffffff;
+
+  /* Border */
+  --border-color:         #e2e6ea;
+  --border-radius-sm:     8px;
+  --border-radius-md:     12px;
+  --border-radius-lg:     20px;
+  --border-radius-xl:     32px;
+
+  /* Shadows */
+  --shadow-sm:            0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md:            0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-lg:            0 8px 32px rgba(0, 0, 0, 0.14);
+
+  /* Spacing Scale */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+  --space-2xl:  48px;
+
+  /* Typography */
+  --font-sans:  'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Fira Code', monospace;
+  --text-xs:    0.75rem;
+  --text-sm:    0.875rem;
+  --text-base:  1rem;
+  --text-lg:    1.125rem;
+  --text-xl:    1.25rem;
+  --text-2xl:   1.5rem;
+  --text-3xl:   1.875rem;
+
+  /* Transitions */
+  --transition-fast:    150ms ease;
+  --transition-base:    250ms ease;
+  --transition-slow:    400ms ease;
+
+  /* Z-Index */
+  --z-dropdown:   100;
+  --z-modal:      200;
+  --z-toast:      300;
+  --z-nav:        50;
+}
+
+/* ─── Dark Mode ─────────────────────────────── */
+.dark {
+  --bg-base:              #0f0f1a;
+  --bg-surface:           #1a1a2e;
+  --bg-surface-2:         #16213e;
+  --bg-overlay:           rgba(0, 0, 0, 0.6);
+
+  --text-primary:         #e8e8f0;
+  --text-secondary:       #a0a0c0;
+  --text-muted:           #606080;
+  --text-inverse:         #1a1a2e;
+
+  --border-color:         #2a2a4a;
+
+  --shadow-sm:            0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md:            0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg:            0 8px 32px rgba(0, 0, 0, 0.5);
+}
