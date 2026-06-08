@@ -10,6 +10,7 @@ import StudentManage from "./pages/StudentManage";
 import EducatorManage from "./pages/EducatorManage";
 import EventsManage from "./pages/EventsManage";
 import ReportsManage from "./pages/ReportsManage";
+import OurPeoples from "./pages/OurPeoples";
 
 function AdminLayout() {
   const navigate = useNavigate();
@@ -104,6 +105,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<AdminLogin />} />
+        <Route path="/our-peoples" element={<OurPeoples />} />
         
         <Route
           path="/admin"

@@ -1,7 +1,7 @@
 // src/api/axios.js
 import axios from "axios";
 
-const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "https://steambuddies.onrender.com";
 const API_BASE = String(RAW_BASE).replace(/\/+$/, "");
 
 export const TOKEN_KEYS = {

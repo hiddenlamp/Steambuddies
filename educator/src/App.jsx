@@ -7,6 +7,7 @@ import { ThemeContext } from "./context/ThemeContext";
 // Auth pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import OurPeoples from "./pages/OurPeoples";
 
 // Educator layout/pages
 import EducatorLayout from "./pages/EducatorLayout";
@@ -75,6 +76,7 @@ export default function App() {
             {/* Auth */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/our-peoples" element={<OurPeoples />} />
 
             {/* Educator Panel */}
             <Route

@@ -33,6 +33,7 @@ import HumanBody from "./pages/science/HumanBody";
 import RoboticsLab from "./pages/science/RoboticsLab";
 import MoleculesLab from "./pages/science/MoleculesLab";
 import Settings from "./pages/settings/Settings";
+import OurPeoples from "./pages/our-people/OurPeoples";
 
 // Student navigation
 import Navigation from "./components/navigation/Navigation";
@@ -89,6 +90,7 @@ export default function App() {
               <Route path="/molecules-lab" element={<MoleculesLab />} />
               <Route path="/mock-tests" element={<MockTest />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/our-peoples" element={<OurPeoples />} />
             </Route>
 
             {/* 404 */}
