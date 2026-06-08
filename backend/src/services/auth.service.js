@@ -161,6 +161,31 @@ async function registerStudent(payload) {
   return sanitizeUser(user);
 }
 
+/* ------------------ REGISTER EDUCATOR ------------------ */
+async function registerEducator(payload) {
+  const email = normalizeEmail(payload?.email);
+  if (!email) throw new AppError("Email is required", 400);
+
+  const exists = await User.findOne({ email });
+  if (exists) throw new AppError("Email already registered", 409);
+
+  const password = requirePassword(payload?.password);
+  const passwordHash = await User.hashPassword(password);
+
+  const fullName = requireText(payload?.fullName, "fullName");
+  const educatorId = requireText(payload?.educatorId || payload?.educator_id, "educatorId");
+
+  const user = await User.create({
+    role: "educator",
+    fullName,
+    email,
+    educatorId,
+    passwordHash,
+  });
+
+  return sanitizeUser(user);
+}
+
 /* ------------------ LOGIN ------------------ */
 async function login(payload) {
   const role = normalizeText(payload?.role);
@@ -314,6 +339,7 @@ async function resetPassword({ token, newPassword }) {
 
 module.exports = {
   registerStudent,
+  registerEducator,
   login,
   forgotPassword,
   resetPassword,
