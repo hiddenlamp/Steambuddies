@@ -3,7 +3,8 @@ import { createContext, useEffect, useState, useCallback } from "react";
 
 export const AuthContext = createContext(null);
 
-const API_BASE = "http://localhost:5000/api/auth";
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "https://steambuddies.onrender.com";
+const API_BASE = `${String(RAW_BASE).replace(/\/+$/, "")}/api/auth`;
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
