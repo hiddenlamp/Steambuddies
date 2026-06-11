@@ -51,7 +51,12 @@ const envOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
 const devFallback = [
   "http://localhost:5173", "http://127.0.0.1:5173",
   "http://localhost:5174", "http://127.0.0.1:5174",
-  "http://localhost:5175", "http://127.0.0.1:5175"
+  "http://localhost:5175", "http://127.0.0.1:5175",
+  "https://steambuddies.in", "https://www.steambuddies.in",
+  "https://admin.steambuddies.in", "https://educator.steambuddies.in",
+  "https://steambuddies-student.vercel.app", 
+  "https://steambuddies-admin.vercel.app",
+  "https://steambuddies-educator.vercel.app"
 ];
 
 const allowedOrigins = [...new Set([...envOrigins, ...devFallback])]
