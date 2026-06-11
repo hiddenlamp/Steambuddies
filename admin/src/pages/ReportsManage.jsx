@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getDailyReports } from "../api/reports.api";
 import { FileText, Search, MapPin, Users, Lightbulb, Pickaxe, Calendar, User, Eye, X } from "lucide-react";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = String(import.meta.env.VITE_API_BASE_URL || "https://steambuddies.onrender.com").replace(/\/+$/, "");
 
 const formatDateShort = (dateString) => {
   if (!dateString) return "N/A";
