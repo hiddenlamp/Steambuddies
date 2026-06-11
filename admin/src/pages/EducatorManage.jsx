@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Search, Trash2, Loader2, Presentation, Plus, X, Check, Edit2, Wand2, Copy } from "lucide-react";
-import { getAdminUsers, deleteAdminUser, createEducator, updateEducator } from "../api/admin.api";
+import { getAdminUsers, deleteAdminUser, createEducator, updateEducator, createSchool } from "../api/admin.api";
 import api from "../api/auth.api";
 
 export default function EducatorManage() {
@@ -24,6 +24,8 @@ export default function EducatorManage() {
   
   // Schools List
   const [schools, setSchools] = useState([]);
+  const [newSchoolName, setNewSchoolName] = useState("");
+  const [creatingSchool, setCreatingSchool] = useState(false);
 
   useEffect(() => {
     fetchEducators();
@@ -124,6 +126,20 @@ export default function EducatorManage() {
        alert("Failed to save educator: " + (err.response?.data?.message || err.message));
     } finally {
        setSaving(false);
+    }
+  };
+
+  const handleCreateSchool = async () => {
+    if (!newSchoolName.trim()) return;
+    setCreatingSchool(true);
+    try {
+      await createSchool(newSchoolName.trim());
+      setNewSchoolName("");
+      await fetchSchools(); // Refresh the list
+    } catch (err) {
+      alert("Failed to create school: " + (err.response?.data?.message || err.message));
+    } finally {
+      setCreatingSchool(false);
     }
   };
 
@@ -349,9 +365,35 @@ export default function EducatorManage() {
 
               <div className="pt-2">
                 <label className="block text-sm font-semibold text-white/70 mb-2">Assign Schools</label>
+                
+                {/* Quick Add School */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newSchoolName}
+                    onChange={(e) => setNewSchoolName(e.target.value)}
+                    placeholder="Add new school..."
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleCreateSchool();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateSchool}
+                    disabled={creatingSchool || !newSchoolName.trim()}
+                    className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-sm font-bold transition flex items-center justify-center min-w-[60px]"
+                  >
+                    {creatingSchool ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                  </button>
+                </div>
+
                 <div className="bg-white/5 border border-white/10 rounded-xl max-h-48 overflow-y-auto p-2 space-y-1">
                   {schools.length === 0 ? (
-                    <p className="text-xs text-white/40 p-2 italic">No schools available in database.</p>
+                    <p className="text-xs text-white/40 p-2 italic">No schools available. Add one above!</p>
                   ) : (
                     schools.map(sch => (
                       <label 

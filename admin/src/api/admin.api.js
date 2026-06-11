@@ -19,3 +19,7 @@ export const createEducator = async (payload) => {
 export const updateEducator = async (id, payload) => {
   return api.put(`/admin/educators/${id}`, payload);
 };
+
+export const createSchool = async (name) => {
+  return api.post("/schools", { name });
+};
