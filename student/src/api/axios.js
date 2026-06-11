@@ -33,7 +33,7 @@ export function getRefreshToken() {
 
 export const api = axios.create({
   baseURL: `${API_BASE}/api`,
-  timeout: 20000,
+  timeout: 120000, // Increased to 120s (2 mins) to handle Render cold starts
   withCredentials: true, // refresh cookie/secure flows ke liye ok
   headers: { Accept: "application/json" },
 });
@@ -99,7 +99,7 @@ async function refreshAccessToken() {
     {
       withCredentials: true,
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      timeout: 20000,
+      timeout: 120000,
     }
   );
 

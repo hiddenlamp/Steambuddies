@@ -11,3 +11,11 @@ export const getAdminUsers = async (params) => {
 export const deleteAdminUser = async (id) => {
   return api.delete(`/admin/users/${id}`);
 };
+
+export const createEducator = async (payload) => {
+  return api.post("/admin/educators", payload);
+};
+
+export const updateEducator = async (id, payload) => {
+  return api.put(`/admin/educators/${id}`, payload);
+};

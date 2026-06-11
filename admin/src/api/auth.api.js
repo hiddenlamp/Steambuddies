@@ -1,7 +1,8 @@
 import axios from "axios";
 
-// Automatically use the correct backend URL
-const API_URL = import.meta.env.VITE_API_BASE_URL || "https://steambuddies.onrender.com/api";
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "https://steambuddies.onrender.com";
+const API_BASE = String(RAW_BASE).replace(/\/+$/, "");
+const API_URL = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 const api = axios.create({
   baseURL: API_URL,

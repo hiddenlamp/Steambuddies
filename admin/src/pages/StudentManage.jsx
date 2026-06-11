@@ -43,7 +43,7 @@ export default function StudentManage() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto">
+    <div className="p-4 md:p-10 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-black mb-2 flex items-center gap-3">
@@ -67,7 +67,7 @@ export default function StudentManage() {
 
       <div className="bg-white/[0.02] border border-white/10 rounded-3xl overflow-hidden backdrop-blur-xl shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="bg-white/[0.05] border-b border-white/10 text-white/50 uppercase tracking-wider font-bold">
               <tr>
                 <th className="px-6 py-4">Name</th>

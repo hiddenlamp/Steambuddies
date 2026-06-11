@@ -97,6 +97,10 @@ export default function EducatorActivities() {
     const id = typeof activity === "string" ? activity : normalizeId(activity);
     if (!id) return;
 
+    if (!window.confirm("Are you sure you want to delete this activity? It will be removed from all student feeds immediately.")) {
+      return;
+    }
+
     setBusyId(id);
     try {
       await deleteActivityApi(id);

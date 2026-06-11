@@ -1,7 +1,7 @@
-// educator/src/pages/auth/Login.jsx
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { Check, AlertTriangle } from "lucide-react";
 import logo from "../../assets/logo.png";
 import { loginApi } from "../../api/auth.api";
 import { getApiError } from "../../api/axios";
@@ -94,30 +94,44 @@ export default function Login() {
             </p>
           </div>
 
-          {status?.msg ? (
-            <div
-              className={cn(
-                "mb-3 shrink-0 text-xs rounded-2xl px-3 py-2 border",
-                status.type === "success"
-                  ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30"
-                  : "text-red-300 bg-red-500/10 border-red-500/30"
-              )}
-            >
-              {status.msg}
-            </div>
-          ) : null}
+          <AnimatePresence>
+            {status?.msg && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                animate={{ opacity: 1, height: "auto", marginBottom: "1rem" }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                className="overflow-hidden"
+              >
+                <div
+                  className={cn(
+                    "flex items-center gap-3 shrink-0 text-sm rounded-2xl px-4 py-3 border shadow-lg backdrop-blur-md",
+                    status.type === "success"
+                      ? "text-emerald-200 bg-emerald-500/10 border-emerald-500/30 shadow-emerald-500/10"
+                      : "text-rose-200 bg-rose-500/10 border-rose-500/30 shadow-rose-500/10"
+                  )}
+                >
+                  {status.type === "success" ? (
+                    <Check className="h-5 w-5 shrink-0 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5 shrink-0 text-rose-400" />
+                  )}
+                  <span className="font-medium leading-snug">{status.msg}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2 custom-scroll space-y-4 min-h-0">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-200">
-                Educator ID / Email
+                Educator ID
               </label>
               <input
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
-                placeholder="Enter Educator ID or email"
+                placeholder="Enter Educator ID"
                 className="w-full rounded-2xl bg-black/60 border border-white/15 px-4 py-2.5 text-sm outline-none
                 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 placeholder:text-gray-500"
               />
@@ -145,12 +159,6 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-gray-400">
-              <span />
-              <button type="button" className="hover:text-cyan-300">
-                Forgot password?
-              </button>
-            </div>
 
             <motion.button
               type="submit"
@@ -167,16 +175,6 @@ export default function Login() {
             </motion.button>
           </form>
 
-          <div className="mt-4 shrink-0 text-center text-[11px] md:text-xs text-gray-400">
-            Don&apos;t have an educator account?{" "}
-            <button
-              type="button"
-              onClick={() => nav("/register")}
-              className="text-cyan-300 hover:text-cyan-200 font-medium"
-            >
-              Request Access / Sign Up
-            </button>
-          </div>
         </motion.div>
       </div>
     </div>

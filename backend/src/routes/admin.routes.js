@@ -16,4 +16,8 @@ router.get("/metrics", adminController.getMetrics);
 router.get("/users", adminController.getUsers);
 router.delete("/users/:id", adminController.deleteUser);
 
+// Educator Management
+router.post("/educators", adminController.createEducator);
+router.put("/educators/:id", adminController.updateEducator);
+
 module.exports = router;

@@ -114,6 +114,20 @@ exports.createProject = async (req, res) => {
       educatorName: req.user?.fullName || req.user?.name || "",
     });
 
+    if (doc.status === "published") {
+      const Notification = require("../models/Notification");
+      await Notification.create({
+        recipient: null, // Global
+        title: { en: "New Project Published!" },
+        message: { en: `A new project has been published: ${doc.title.en}` },
+        type: "system", // Or "project" if added to enum
+        relatedId: doc._id,
+        sender: userIdObj
+      });
+      const io = req.app.get("io");
+      if (io) io.emit("new_notification");
+    }
+
     return res.status(201).json({
       ok: true,
       data: doc,

@@ -16,10 +16,9 @@ const NotificationSchema = new mongoose.Schema(
       en: { type: String, required: true },
       hi: { type: String, default: "" },
     },
-    // The type of content this notification relates to
     type: { 
       type: String, 
-      enum: ["course", "note", "manual", "announcement", "system"],
+      enum: ["course", "note", "manual", "announcement", "system", "doubt", "reel"],
       default: "system"
     },
     relatedId: { type: mongoose.Schema.Types.ObjectId }, // ID of the course, note, etc.

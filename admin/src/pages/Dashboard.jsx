@@ -30,7 +30,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto">
+    <div className="p-4 md:p-10 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-black mb-2">Welcome Back, Admin</h1>
         <p className="text-white/60 font-semibold">Here is what's happening on your platform today.</p>

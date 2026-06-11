@@ -640,99 +640,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [gamification, setGamification] = useState(() => {
-    try {
-      const saved = localStorage.getItem("steam_gamification");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return {
-      level: 1,
-      xp: 120,
-      maxXp: 200,
-      coins: 50,
-      badges: ["Welcome Explorer"]
-    };
-  });
 
-  useEffect(() => {
-    const handleSync = (e) => {
-      if (e.key === "steam_gamification" || !e.key) {
-        try {
-          const saved = localStorage.getItem("steam_gamification");
-          if (saved) setGamification(JSON.parse(saved));
-        } catch {}
-      }
-    };
-    window.addEventListener("storage", handleSync);
-    return () => window.removeEventListener("storage", handleSync);
-  }, []);
-
-  const badgesList = useMemo(() => [
-    {
-      id: "Welcome Explorer",
-      name: language === "hi" ? "स्वागत एक्सप्लोरर" : "Welcome Explorer",
-      desc: language === "hi" ? "स्टीम पोर्टल से जुड़ने पर मिला" : "Awarded for joining the STEAM portal.",
-      icon: "🧭",
-      color: "from-blue-500 via-sky-400 to-cyan-400",
-      accent: "shadow-blue-500/20",
-    },
-    {
-      id: "Daily Challenger",
-      name: language === "hi" ? "दैनिक चुनौती विजेता" : "Daily Challenger",
-      desc: language === "hi" ? "एक दैनिक पहेली को सफलतापूर्वक हल किया" : "Completed a daily puzzle challenge.",
-      icon: "⚡",
-      color: "from-amber-500 via-orange-500 to-yellow-500",
-      accent: "shadow-orange-500/20",
-    },
-    {
-      id: "Star Astronomer",
-      name: language === "hi" ? "स्टार खगोलशास्त्री" : "Star Astronomer",
-      desc: language === "hi" ? "सौर मंडल सिम्युलेटर की खोज की" : "Explored the Solaris space simulator.",
-      icon: "⭐",
-      color: "from-violet-500 via-indigo-500 to-purple-500",
-      accent: "shadow-indigo-500/20",
-    },
-    {
-      id: "Physiologist",
-      name: language === "hi" ? "शरीर क्रिया विज्ञान शास्त्री" : "Physiologist",
-      desc: language === "hi" ? "मानव शरीर रचना लैब का अध्ययन किया" : "Investigated the human body lab.",
-      icon: "🫁",
-      color: "from-rose-500 via-pink-500 to-red-500",
-      accent: "shadow-pink-500/20",
-    },
-    {
-      id: "Science Prodigy",
-      name: language === "hi" ? "विज्ञान उस्ताद" : "Science Prodigy",
-      desc: language === "hi" ? "स्तर 3 पर पहुंचने पर अनलॉक हुआ" : "Unlocked upon reaching Level 3.",
-      icon: "🏆",
-      color: "from-emerald-500 via-teal-500 to-green-400",
-      accent: "shadow-teal-500/20",
-    },
-    {
-      id: "STEAM Champ",
-      name: language === "hi" ? "स्टीम चैंपियन" : "STEAM Champ",
-      desc: language === "hi" ? "स्तर 5 पर पहुंचने पर सर्वोच्च सम्मान" : "Ultimate honor for reaching Level 5.",
-      icon: "👑",
-      color: "from-fuchsia-500 via-purple-500 to-pink-500",
-      accent: "shadow-purple-500/20",
-    },
-    {
-      id: "Robotics Engineer",
-      name: language === "hi" ? "रोबोटिक्स इंजीनियर" : "Robotics Engineer",
-      desc: language === "hi" ? "रोबोटिक्स लैब के तर्क को संकलित किया" : "Programmed the 3D robotic joint arm.",
-      icon: "🤖",
-      color: "from-purple-600 via-indigo-500 to-blue-500",
-      accent: "shadow-indigo-500/20",
-    },
-    {
-      id: "Molecular Chemist",
-      name: language === "hi" ? "आणविक रसायन शास्त्री" : "Molecular Chemist",
-      desc: language === "hi" ? "3डी अणु निर्माण व बांड विश्लेषण किया" : "Constructed structures in Molecular lab.",
-      icon: "⚛️",
-      color: "from-emerald-500 via-teal-400 to-cyan-500",
-      accent: "shadow-teal-500/20",
-    },
-  ], [language]);
 
   const ENDPOINT = "/profile/me";
 
@@ -932,45 +840,7 @@ export default function Profile() {
                   </div>
                 </NeonCard>
 
-                {/* 3D Companion Avatar */}
-                <NeonCard theme={theme} tone="violet" className="mt-4 p-5 flex flex-col items-center">
-                  <div className="text-xs font-bold tracking-widest uppercase text-violet-400 mb-3 flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-violet-400" />
-                    {language === "hi" ? "3डी साथी" : "3D COMPANION"}
-                  </div>
-                  <ThreeAvatar level={gamification.level} theme={theme} />
-                  <div className="text-xs text-center text-slate-400 mt-3 px-2 leading-relaxed">
-                    {language === "hi" ? "आपका व्यक्तिगत रोबोट साथी। स्तर बढ़ने पर नई सज्जा अनलॉक होती है।" : "Your personal robot companion. Level up to unlock glowing rings and cosmetics!"}
-                  </div>
-                </NeonCard>
 
-                {/* Gamification Stats (Level, XP, Coins) */}
-                <NeonCard theme={theme} tone="sunset" className="mt-4 p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-bold text-orange-400 uppercase">LEVEL {gamification.level}</div>
-                      <div className="text-lg font-black mt-1">{language === "hi" ? "स्टीम स्तर" : "STEAM Level"}</div>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-amber-500/10 px-3 py-1.5 rounded-2xl border border-amber-500/20">
-                      <Sparkles className="h-4 w-4 text-amber-400 animate-pulse" />
-                      <span className="text-xs font-bold text-amber-300">{gamification.coins} Coins</span>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-slate-400">XP Progress</span>
-                      <span className="text-slate-300">{gamification.xp} / {gamification.maxXp} XP</span>
-                    </div>
-                    <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5 relative">
-                      <motion.div 
-                        className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(100, (gamification.xp / gamification.maxXp) * 100)}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                      />
-                    </div>
-                  </div>
-                </NeonCard>
 
                 {/* ✅ Quick Settings (under student card like screenshot) */}
                 <QuickSettings
@@ -1026,62 +896,7 @@ export default function Profile() {
               </NeonCard>
             ) : null}
 
-            {/* Achievements Showcase */}
-            {!loading && data ? (
-              <NeonCard theme={theme} tone="sunset" className="p-6">
-                <div>
-                  <div className={cn("text-xs font-semibold", theme === "dark" ? "text-white/60" : "text-slate-600")}>
-                    {language === "hi" ? "मेरी उपलब्धियां" : "My Achievements"}
-                  </div>
-                  <div className="mt-1 text-xl font-black">
-                    {language === "hi" ? "बैज और मेडल" : "Badges & Credentials"}
-                  </div>
-                </div>
 
-                <div className="mt-5 grid gap-4 grid-cols-2 sm:grid-cols-3">
-                  {badgesList.map((b) => {
-                    const isUnlocked = gamification.badges.includes(b.id);
-                    return (
-                      <motion.div
-                        key={b.id}
-                        whileHover={isUnlocked ? { scale: 1.04, y: -4 } : {}}
-                        className={cn(
-                          "relative flex flex-col items-center text-center p-4 rounded-3xl border transition-all duration-300",
-                          isUnlocked
-                            ? theme === "dark"
-                              ? "bg-white/5 border-white/10 shadow-lg"
-                              : "bg-white/90 border-black/5 shadow-md"
-                            : "opacity-45 bg-black/10 border-transparent pointer-events-none"
-                        )}
-                      >
-                        {/* Badge Orb */}
-                        <div
-                          className={cn(
-                            "relative w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-md",
-                            isUnlocked
-                              ? `bg-gradient-to-br ${b.color} text-white ${b.accent}`
-                              : "bg-slate-700 text-slate-400"
-                          )}
-                        >
-                          {isUnlocked ? b.icon : "🔒"}
-                          {isUnlocked && (
-                            <div className="absolute inset-0 rounded-full border border-white/30 animate-pulse" />
-                          )}
-                        </div>
-
-                        <div className="mt-3 font-extrabold text-sm truncate w-full text-center">
-                          {b.name}
-                        </div>
-
-                        <div className={cn("mt-1 text-[11px] leading-snug text-center", theme === "dark" ? "text-white/60" : "text-slate-500")}>
-                          {b.desc}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </NeonCard>
-            ) : null}
 
             {!loading && data ? (
               <div className="grid gap-6 lg:grid-cols-3">

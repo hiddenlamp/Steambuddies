@@ -92,7 +92,9 @@ exports.getMyProfile = async (req, res) => {
         location: user.location || "",
         classLevel: user.classLevel || "",
         schoolName: user.school || user.schoolName || "",
+        assignedSchools: user.assignedSchools || [],
         studentId: user.studentId || "",
+        educatorId: user.educatorId || "",
         createdAt: user.createdAt,
       },
       stats: {
@@ -128,5 +130,28 @@ exports.getMyProfile = async (req, res) => {
       message: "Profile summary error",
       error: err.message,
     });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.userId || req.userIdObj || req.user?._id || req.user?.id;
+    const uid = toObjectId(userId);
+    if (!uid) return res.status(401).json({ message: "Unauthorized" });
+
+    const user = await User.findById(uid);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { assignedSchools } = req.body;
+    
+    // Allow updating assignedSchools if educator
+    if (user.role === "educator" && Array.isArray(assignedSchools)) {
+      user.assignedSchools = assignedSchools;
+    }
+
+    await user.save();
+    return res.json({ message: "Profile updated successfully" });
+  } catch(err) {
+     return res.status(500).json({ message: "Update error", error: err.message });
   }
 };

@@ -34,6 +34,9 @@ import RoboticsLab from "./pages/science/RoboticsLab";
 import MoleculesLab from "./pages/science/MoleculesLab";
 import Settings from "./pages/settings/Settings";
 import OurPeoples from "./pages/our-people/OurPeoples";
+import ReferenceTools from "./pages/reference-tools/ReferenceTools";
+import Doubts from "./pages/doubts/Doubts";
+import DoubtChat from "./pages/doubts/DoubtChat";
 
 // Student navigation
 import Navigation from "./components/navigation/Navigation";
@@ -91,6 +94,9 @@ export default function App() {
               <Route path="/mock-tests" element={<MockTest />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/our-peoples" element={<OurPeoples />} />
+              <Route path="/reference-tools" element={<ReferenceTools />} />
+              <Route path="/doubts" element={<Doubts />} />
+              <Route path="/doubts/:id" element={<DoubtChat />} />
             </Route>
 
             {/* 404 */}

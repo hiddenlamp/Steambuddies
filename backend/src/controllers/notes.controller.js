@@ -71,6 +71,9 @@ exports.createNote = async (req, res, next) => {
       sender: req.user.id
     });
 
+    const io = req.app.get("io");
+    if (io) io.emit("new_notification");
+
     return res.status(201).json({ note: doc });
   } catch (err) {
     return next(err);

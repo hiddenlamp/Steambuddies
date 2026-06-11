@@ -1,10 +1,12 @@
 // src/pages/auth/Register.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { Copy, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import { registerStudentApi } from "../../api/auth.api";
 import { getApiError } from "../../api/axios";
+import AuthLayout from "./AuthLayout";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 
@@ -14,6 +16,8 @@ export default function Register() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const [student, setStudent] = useState({
     fullName: "",
@@ -32,33 +36,38 @@ export default function Register() {
       "Bihari Girls High School",
       "Kgbv churchu",
       "Project Girls high School Charhi",
-      "UPG high school Ango Churchu ",
+      "UPG high school Ango Churchu",
       "KV+2 Arki Khunti",
       "UPG High School Tarub Khunti",
       "PM SHRI UPG MUM Tilmi , Karra Khunti",
       "Pitts Model School Gumia Bokaro",
-      "Demo School 12",
-      "Demo School 13",
-      "Demo School 14",
-      "Demo School 15",
     ],
     [],
   );
 
-  const classOptions = useMemo(() => ["4", "5", "6", "7", "8", "9", "10"], []);
+  const classOptions = useMemo(() => ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], []);
+
+  // Generate a random suffix once so it doesn't change on every keystroke
+  const [randomSuffix] = useState(() => Math.random().toString(36).substring(2, 8).toUpperCase());
+  const [copied, setCopied] = useState(false);
 
   const generatedStudentId = useMemo(() => {
     const cleanName = student.fullName.toLowerCase().replace(/[^a-z]/g, "");
-    const cleanPhone = student.phone.replace(/[^0-9]/g, "");
+    if (!cleanName) return "";
+
+    // Take up to first 4 letters of the name and convert to uppercase
+    const namePart = cleanName.slice(0, 4).toUpperCase();
     
-    if (!cleanName || !cleanPhone) return "";
+    // Combine name with the fixed random suffix
+    return `${namePart}-${randomSuffix}`;
+  }, [student.fullName, randomSuffix]);
 
-    const namePart = cleanName.slice(0, 4); // Take up to first 4 letters
-    const remainingLength = 8 - namePart.length;
-    const phonePart = cleanPhone.slice(-remainingLength); // Take remaining length from end of phone
-
-    return `${namePart}${phonePart}`;
-  }, [student.fullName, student.phone]);
+  const handleCopy = () => {
+    if (!generatedStudentId) return;
+    navigator.clipboard.writeText(generatedStudentId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,6 +78,11 @@ export default function Register() {
 
       if (student.password !== student.confirmPassword) {
         setError("Passwords do not match.");
+        return;
+      }
+
+      if (!student.className || !student.school) {
+        setError("Please select both class and school.");
         return;
       }
 
@@ -93,9 +107,7 @@ export default function Register() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_60%),radial-gradient(circle_at_bottom,rgba(168,85,247,0.22),transparent_60%)]" />
-
+    <AuthLayout isPasswordFocused={isPasswordFocused} inputLength={student.fullName.length}>
       <div className="relative z-10 w-full max-w-2xl max-h-full flex flex-col gap-4 min-h-0">
         <div>
           <motion.button
@@ -141,7 +153,7 @@ export default function Register() {
             <div className="w-14 h-14 rounded-2xl bg-black/60 flex items-center justify-center border border-white/20">
               <img
                 src={logo}
-                alt="Hidden Lamp"
+                alt="Steam Buddies"
                 className="w-10 h-10 object-contain"
               />
             </div>
@@ -191,29 +203,35 @@ export default function Register() {
                 />
 
                 {generatedStudentId && (
-                  <div className="md:col-span-2 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 px-4 py-3 mb-1">
-                    <p className="text-xs text-cyan-300 font-medium mb-1">Your Student ID (Use this to login):</p>
-                    <p className="text-xl font-bold text-white tracking-wider">{generatedStudentId}</p>
+                  <div className="md:col-span-2 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 px-4 py-3 mb-1 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-cyan-300 font-medium mb-1">Your Student ID (Use this to login):</p>
+                      <p className="text-xl font-bold text-white tracking-wider">{generatedStudentId}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="p-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 transition flex items-center justify-center"
+                      title="Copy ID"
+                    >
+                      {copied ? <Check size={18} /> : <Copy size={18} />}
+                    </button>
                   </div>
                 )}
 
-                <SelectField
+                <CustomSelect
                   label="Class"
                   value={student.className}
-                  onChange={(e) =>
-                    setStudent((s) => ({ ...s, className: e.target.value }))
-                  }
+                  onChange={(val) => setStudent((s) => ({ ...s, className: val }))}
                   options={classOptions}
                   placeholder="Select class"
                   required
                 />
 
-                <SelectField
+                <CustomSelect
                   label="School name"
                   value={student.school}
-                  onChange={(e) =>
-                    setStudent((s) => ({ ...s, school: e.target.value }))
-                  }
+                  onChange={(val) => setStudent((s) => ({ ...s, school: val }))}
                   options={schoolOptions}
                   placeholder="Select school"
                   required
@@ -229,6 +247,8 @@ export default function Register() {
                   onChange={(e) =>
                     setStudent((s) => ({ ...s, password: e.target.value }))
                   }
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
                   required
                 />
                 <Field
@@ -242,6 +262,8 @@ export default function Register() {
                       confirmPassword: e.target.value,
                     }))
                   }
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
                   required
                 />
               </div>
@@ -275,7 +297,7 @@ export default function Register() {
           </div>
         </motion.div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
 
@@ -284,6 +306,8 @@ function Field({
   type = "text",
   value,
   onChange,
+  onFocus,
+  onBlur,
   placeholder,
   required,
 }) {
@@ -294,40 +318,58 @@ function Field({
         type={type}
         value={value}
         onChange={onChange}
+        onFocus={onFocus}
+        onBlur={onBlur}
         required={required}
         placeholder={placeholder}
         className="w-full rounded-2xl bg-black/60 border border-white/15 px-4 py-2.5 text-sm outline-none
-        focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 placeholder:text-gray-500"
+        focus:border-green-400 focus:ring-1 focus:ring-green-500 placeholder:text-gray-500 transition-colors"
       />
     </div>
   );
 }
 
-function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-  placeholder,
-  required,
-}) {
+function CustomSelect({ label, value, onChange, options, placeholder, required }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-200">{label}</label>
-      <select
-        value={value}
-        onChange={onChange}
-        required={required}
-        className="w-full rounded-2xl bg-black/60 border border-white/15 px-4 py-2.5 text-sm outline-none
-        focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500"
+    <div className="space-y-1 relative" ref={ref}>
+      <label className="text-xs font-medium text-gray-200">
+        {label} {required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      <div 
+        className={`w-full rounded-2xl bg-black/60 border ${open ? 'border-cyan-400 ring-1 ring-cyan-500' : 'border-white/15'} px-4 py-2.5 text-sm cursor-pointer flex items-center justify-between transition-colors shadow-inner`}
+        onClick={() => setOpen(!open)}
       >
-        <option value="">{placeholder}</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
+        <span className={value ? "text-white" : "text-gray-500"}>{value || placeholder}</span>
+        <svg className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+      </div>
+      
+      {open && (
+        <div className="absolute z-50 top-full mt-2 w-full max-h-56 overflow-y-auto rounded-2xl bg-[#0f172a] border border-slate-700 shadow-[0_20px_50px_rgba(0,0,0,0.9)] custom-scroll">
+          {options.map((opt) => (
+            <div 
+              key={opt}
+              className={`px-4 py-3 text-sm cursor-pointer hover:bg-slate-800 transition-colors border-b border-slate-800/50 last:border-0 ${value === opt ? 'bg-cyan-500/20 text-cyan-300 font-medium' : 'text-slate-300'}`}
+              onClick={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
+            >
+              {opt}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

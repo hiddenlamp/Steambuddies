@@ -22,7 +22,11 @@ import {
   GraduationCap,
   StickyNote,
   School,
+  Target,
+  MessageCircle
 } from "lucide-react";
+import { API_BASE_URL } from "../utils/data";
+import NotificationBell from "../components/shared/NotificationBell";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 
@@ -46,7 +50,6 @@ function meta(pathname) {
   if (pathname === "/educator") return { title: "Dashboard", sub: "Overview, quick stats & shortcuts." };
   if (pathname.startsWith("/educator/courses")) return { title: "Courses", sub: "Create, update, publish courses & lessons." };
   if (pathname.startsWith("/educator/school-courses")) return { title: "School Courses", sub: "Manage active courses class-wise (student Home)." };
-  if (pathname.startsWith("/educator/activities")) return { title: "Daily Activities", sub: "Post short video status + tasks & notes." };
 
   // ✅ IMPORTANT: match App.jsx -> /educator/mock-tests
   if (pathname.startsWith("/educator/mock-tests")) return { title: "Mock Tests", sub: "Build tests, schedule, monitor & leaderboard." };
@@ -55,6 +58,9 @@ function meta(pathname) {
   if (pathname.startsWith("/educator/manuals")) return { title: "Manuals", sub: "Upload manuals / PDFs / guides for learners." };
   if (pathname.startsWith("/educator/syllabus")) return { title: "Syllabus", sub: "Upload syllabus docs and yearly planning." };
   if (pathname.startsWith("/educator/notes")) return { title: "Notes", sub: "Upload class notes, worksheets & handouts." };
+  if (pathname.startsWith("/educator/challenges")) return { title: "Challenges", sub: "Post daily MCQ challenges." };
+  if (pathname.startsWith("/educator/reels")) return { title: "STEAM Shorts", sub: "Manage short video reels." };
+  if (pathname.startsWith("/educator/doubts")) return { title: "Doubts Console", sub: "Resolve student doubts and chat." };
   return { title: "Educator", sub: "Manage your teaching workspace." };
 }
 
@@ -148,77 +154,7 @@ function PillNav({ icon: Icon, label, badge, active, onClick }) {
   );
 }
 
-/** Action cards */
-function ActionCards({ onCourse, onSchoolCourses, onActivity, onMock, onProject, onManual, onSyllabus, onNote, onReport }) {
-  const Card = ({ title, desc, icon: Icon, tone, btnText, onClick }) => (
-    <motion.div
-      whileHover={{ y: -3 }}
-      whileTap={{ scale: 0.98 }}
-      className={cn(
-        "group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.05] backdrop-blur-xl",
-        "shadow-[0_18px_60px_rgba(0,0,0,0.35)] p-4"
-      )}
-    >
-      <div className={cn("pointer-events-none absolute -inset-24 opacity-70 blur-2xl", tone)} />
-      <div className="relative flex items-start gap-3">
-        <div className="size-12 rounded-2xl grid place-items-center bg-white/8 border border-white/10">
-          <Icon className="h-5 w-5 text-white/85" />
-        </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-black text-white">{title}</p>
-          <p className="mt-1 text-[11px] text-white/65 font-semibold leading-relaxed">{desc}</p>
-
-          <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-              "mt-3 inline-flex items-center gap-2 rounded-2xl px-3.5 py-2 text-[12px] font-black",
-              "bg-white/8 hover:bg-white/12 border border-white/10 hover:border-white/15 transition"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-            {btnText}
-          </button>
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_55%)]" />
-    </motion.div>
-  );
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4 sm:gap-3 min-w-[320px]">
-      <Card title="Create Course" desc="Build modules, lessons, videos & publish to students." icon={BookOpen}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(56,189,248,0.25),transparent_60%)]"
-        btnText="New Course" onClick={onCourse} />
-      <Card title="School Active Courses" desc="Assign/publish class-wise (student Home shows this)." icon={School}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(34,197,94,0.18),transparent_60%)]"
-        btnText="Manage" onClick={onSchoolCourses} />
-      <Card title="Post Activity" desc="Upload short status video + task notes for today." icon={Video}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(244,114,182,0.22),transparent_60%)]"
-        btnText="New Activity" onClick={onActivity} />
-      <Card title="Create MockTest" desc="Make question bank, schedule test & track results." icon={ClipboardList}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.22),transparent_60%)]"
-        btnText="New Test" onClick={onMock} />
-      <Card title="Upload Project" desc="Project briefs, files, rubrics & submissions." icon={FolderKanban}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(251,191,36,0.18),transparent_60%)]"
-        btnText="Add Project" onClick={onProject} />
-      <Card title="Upload Manual" desc="Guides, PDFs, handbooks & reference docs." icon={FileText}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(147,197,253,0.16),transparent_60%)]"
-        btnText="Add Manual" onClick={onManual} />
-      <Card title="Upload Syllabus" desc="Year plan, chapter mapping & schedule." icon={GraduationCap}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.18),transparent_60%)]"
-        btnText="Add Syllabus" onClick={onSyllabus} />
-      <Card title="Upload Notes" desc="Notes, worksheets, PDFs & classroom handouts." icon={StickyNote}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(244,114,182,0.16),transparent_60%)]"
-        btnText="Add Notes" onClick={onNote} />
-      <Card title="Submit Daily Report" desc="Log school visits, students, and activities." icon={FileText}
-        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(167,139,250,0.2),transparent_60%)]"
-        btnText="New Report" onClick={onReport} />
-    </div>
-  );
-}
 
 function Sidebar({ user, counts, activeKey, onNav, onLogout }) {
   const name = user?.name || user?.fullName || "Educator";
@@ -241,21 +177,20 @@ function Sidebar({ user, counts, activeKey, onNav, onLogout }) {
             </div>
           </div>
 
-          <button type="button" className="rounded-2xl p-2 bg-white/6 border border-white/10 hover:bg-white/10 hover:border-white/15 transition">
-            <Bell className="h-4 w-4 text-white/80" />
-          </button>
+          <NotificationBell language="en" />
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
           {[
             ["Courses", counts?.courses ?? 0],
             ["School", counts?.schoolCourses ?? 0],
-            ["Activities", counts?.activities ?? 0],
             ["Tests", counts?.mocktests ?? 0],
             ["Projects", counts?.projects ?? 0],
             ["Manuals", counts?.manuals ?? 0],
             ["Syllabus", counts?.syllabus ?? 0],
             ["Notes", counts?.notes ?? 0],
+            ["Challenges", counts?.challenges ?? 0],
+            ["STEAM Shorts", counts?.reels ?? 0],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-[10px] text-white/55 font-extrabold tracking-[0.16em] uppercase">{label}</p>
@@ -270,7 +205,7 @@ function Sidebar({ user, counts, activeKey, onNav, onLogout }) {
             <p className="text-[12px] font-black text-white/90">Educator Console</p>
           </div>
           <p className="mt-1 text-[11px] text-white/65 font-semibold leading-relaxed">
-            Courses, School Active Courses, Activities, Mock Tests & Resources.
+            Courses, School Active Courses, Mock Tests & Resources.
           </p>
         </div>
       </TiltCard>
@@ -284,7 +219,6 @@ function Sidebar({ user, counts, activeKey, onNav, onLogout }) {
           <PillNav icon={LayoutDashboard} label="Dashboard" badge="PRO" active={activeKey === "/educator"} onClick={() => onNav("/educator")} />
           <PillNav icon={BookOpen} label="Courses" badge={counts?.courses ?? 0} active={activeKey === "/educator/courses"} onClick={() => onNav("/educator/courses")} />
           <PillNav icon={School} label="School Courses" badge={counts?.schoolCourses ?? "LIVE"} active={activeKey === "/educator/school-courses"} onClick={() => onNav("/educator/school-courses")} />
-          <PillNav icon={CalendarCheck2} label="Daily Activities" badge={counts?.activities ?? 0} active={activeKey === "/educator/activities"} onClick={() => onNav("/educator/activities")} />
 
           {/* ✅ IMPORTANT: /educator/mock-tests */}
           <PillNav icon={ClipboardList} label="Mock Tests" badge={counts?.mocktests ?? 0} active={activeKey === "/educator/mock-tests"} onClick={() => onNav("/educator/mock-tests")} />
@@ -295,6 +229,9 @@ function Sidebar({ user, counts, activeKey, onNav, onLogout }) {
           <PillNav icon={FileText} label="Manuals" badge={counts?.manuals ?? 0} active={activeKey === "/educator/manuals"} onClick={() => onNav("/educator/manuals")} />
           <PillNav icon={GraduationCap} label="Syllabus" badge={counts?.syllabus ?? 0} active={activeKey === "/educator/syllabus"} onClick={() => onNav("/educator/syllabus")} />
           <PillNav icon={StickyNote} label="Notes" badge={counts?.notes ?? 0} active={activeKey === "/educator/notes"} onClick={() => onNav("/educator/notes")} />
+          <PillNav icon={Target} label="Challenges" badge={counts?.challenges ?? 0} active={activeKey === "/educator/challenges"} onClick={() => onNav("/educator/challenges")} />
+          <PillNav icon={Video} label="STEAM Shorts" badge={counts?.reels ?? 0} active={activeKey === "/educator/reels"} onClick={() => onNav("/educator/reels")} />
+          <PillNav icon={MessageCircle} label="Doubt Chat" badge="NEW" active={activeKey === "/educator/doubts"} onClick={() => onNav("/educator/doubts")} />
         </div>
 
         <button
@@ -346,29 +283,47 @@ export default function EducatorLayout() {
     nav("/login");
   };
 
-  // ✅ Later replace with API counts
-  const counts = {
-    courses: 12,
-    schoolCourses: 4,
-    activities: 34,
-    mocktests: 7,
-    projects: 5,
-    manuals: 9,
-    syllabus: 2,
-    notes: 18,
-  };
+  // ✅ Real API counts
+  const [counts, setCounts] = useState({
+    courses: 0,
+    schoolCourses: 0,
+    mocktests: 0,
+    projects: 0,
+    manuals: 0,
+    syllabus: 0,
+    notes: 0,
+    challenges: 0,
+    reels: 0,
+  });
+
+  useEffect(() => {
+    if (!accessToken) return;
+    
+    fetch(`${API_BASE_URL}/educator/stats`, {
+      headers: { "Authorization": `Bearer ${accessToken}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok && data.counts) {
+        setCounts(data.counts);
+      }
+    })
+    .catch(console.error);
+  }, [accessToken]);
 
   const m = useMemo(() => meta(pathname), [pathname]);
 
   const activeKey = useMemo(() => {
     if (pathname.startsWith("/educator/courses")) return "/educator/courses";
     if (pathname.startsWith("/educator/school-courses")) return "/educator/school-courses";
-    if (pathname.startsWith("/educator/activities")) return "/educator/activities";
     if (pathname.startsWith("/educator/mock-tests")) return "/educator/mock-tests";
     if (pathname.startsWith("/educator/projects")) return "/educator/projects";
     if (pathname.startsWith("/educator/manuals")) return "/educator/manuals";
     if (pathname.startsWith("/educator/syllabus")) return "/educator/syllabus";
     if (pathname.startsWith("/educator/notes")) return "/educator/notes";
+    if (pathname.startsWith("/educator/challenges")) return "/educator/challenges";
+    if (pathname.startsWith("/educator/reels")) return "/educator/reels";
+    if (pathname.startsWith("/educator/doubts")) return "/educator/doubts";
     if (pathname.startsWith("/educator/reports")) return "/educator/reports/new";
     return "/educator";
   }, [pathname]);
@@ -379,9 +334,6 @@ export default function EducatorLayout() {
 
     if (pathname === "/educator/courses/new") return true;
     if (/^\/educator\/courses\/[^/]+\/edit$/.test(pathname)) return true;
-
-    if (pathname === "/educator/activities/new") return true;
-    if (/^\/educator\/activities\/[^/]+\/edit$/.test(pathname)) return true;
 
     // ✅ mock tests builder
     if (pathname === "/educator/mock-tests/new") return true;
@@ -401,6 +353,10 @@ export default function EducatorLayout() {
     if (/^\/educator\/notes\/[^/]+\/edit$/.test(pathname)) return true;
 
     if (pathname === "/educator/reports/new") return true;
+
+    if (pathname.startsWith("/educator/challenges")) return true;
+    if (pathname.startsWith("/educator/reels")) return true;
+    if (pathname.startsWith("/educator/doubts")) return true;
 
     return false;
   }, [pathname]);
@@ -453,24 +409,12 @@ export default function EducatorLayout() {
                   <input
                     placeholder="Search courses, activities, tests, resources..."
                     className={cn(
-                      "w-full sm:w-[520px] rounded-2xl pl-10 pr-3 py-2.5",
+                      "w-full sm:w-[320px] rounded-2xl pl-10 pr-3 py-2.5",
                       "bg-black/25 border border-white/10 focus:border-white/20 outline-none",
-                      "text-[13px] font-semibold text-white placeholder:text-white/40"
+                      "text-[13px] font-semibold text-white placeholder:text-white/40 transition-all focus:sm:w-[400px]"
                     )}
                   />
                 </div>
-
-                <ActionCards
-                  onCourse={() => nav("/educator/courses/new")}
-                  onSchoolCourses={() => nav("/educator/school-courses")}
-                  onActivity={() => nav("/educator/activities/new")}
-                  onMock={() => nav("/educator/mock-tests/new")} // ✅ FIXED
-                  onProject={() => nav("/educator/projects/new")}
-                  onManual={() => nav("/educator/manuals/new")}
-                  onSyllabus={() => nav("/educator/syllabus/new")}
-                  onNote={() => nav("/educator/notes/new")}
-                  onReport={() => nav("/educator/reports/new")}
-                />
               </div>
             ) : (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
@@ -515,15 +459,15 @@ export default function EducatorLayout() {
                   transition={{ type: "spring", stiffness: 240, damping: 22 }}
                   className="fixed left-3 top-3 bottom-3 z-[90] w-[360px] max-w-[92vw]"
                 >
-                  <div className="relative h-full">
-                    <button
-                      type="button"
-                      onClick={() => setDrawer(false)}
-                      className="absolute -right-3 -top-3 rounded-2xl p-2 bg-white/10 border border-white/12 backdrop-blur-xl"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => setDrawer(false)}
+                    className="absolute right-0 sm:-right-3 top-0 sm:-top-3 rounded-2xl p-2 bg-white/20 border border-white/20 backdrop-blur-xl z-50 shadow-xl text-white hover:bg-white/30"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
 
+                  <div className="relative h-full overflow-y-auto pb-6 pr-2 custom-scrollbar">
                     <Sidebar user={user} counts={counts} activeKey={activeKey} onNav={(to) => nav(to)} onLogout={logout} />
                   </div>
                 </motion.div>

@@ -83,3 +83,62 @@ exports.deleteUser = async (req, res, next) => {
     return next(err);
   }
 };
+
+exports.createEducator = async (req, res, next) => {
+  try {
+    const { fullName, educatorId, password, assignedSchools } = req.body;
+    
+    if (!fullName || !educatorId || !password) {
+       return res.status(400).json({ ok: false, message: "Name, Educator ID, and password are required." });
+    }
+
+    const email = `${educatorId}@steambuddies.com`.toLowerCase();
+    
+    const existingUser = await User.findOne({ $or: [{ email }, { educatorId }] });
+    if (existingUser) {
+       return res.status(400).json({ ok: false, message: "Educator ID already exists." });
+    }
+
+    const passwordHash = await User.hashPassword(password);
+    
+    const newUser = await User.create({
+       role: "educator",
+       fullName: fullName.trim(),
+       email,
+       educatorId: educatorId.trim(),
+       passwordHash,
+       assignedSchools: Array.isArray(assignedSchools) ? assignedSchools : []
+    });
+
+    return res.status(201).json({ ok: true, message: "Educator created successfully.", data: { id: newUser._id } });
+  } catch(err) {
+    return next(err);
+  }
+};
+
+exports.updateEducator = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { assignedSchools, fullName, password } = req.body;
+    
+    const user = await User.findById(id);
+    if (!user || user.role !== "educator") {
+       return res.status(404).json({ ok: false, message: "Educator not found." });
+    }
+
+    if (Array.isArray(assignedSchools)) {
+       user.assignedSchools = assignedSchools;
+    }
+    if (fullName) {
+       user.fullName = fullName.trim();
+    }
+    if (password) {
+       user.passwordHash = await User.hashPassword(password);
+    }
+
+    await user.save();
+    return res.status(200).json({ ok: true, message: "Educator updated successfully." });
+  } catch(err) {
+    return next(err);
+  }
+};

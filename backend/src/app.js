@@ -172,6 +172,7 @@ app.use("/api/manuals", manualsRoutes);
 app.use("/api/projects", projectsRoutes);
 app.use("/api/educator", educatorProjectAssignmentsRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/schools", require("./routes/schools.routes.js"));
 
 // Admin
 app.use("/api/admin", adminRoutes);
@@ -180,6 +181,9 @@ app.use("/api/test", testRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/events", require("./routes/events.routes.js"));
 app.use("/api/reports", require("./routes/reports.routes.js"));
+app.use("/api/challenges", require("./routes/challenges.routes.js"));
+app.use("/api/reels", require("./routes/reels.routes.js"));
+app.use("/api/doubts", require("./routes/doubt.routes.js"));
 
 /** =========================
  * 404 + Error handler

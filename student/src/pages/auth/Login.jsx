@@ -6,6 +6,7 @@ import logo from "../../assets/logo.png";
 import { loginApi } from "../../api/auth.api";
 import { getApiError } from "../../api/axios";
 import { setAccessToken } from "../../api/courses.api";
+import AuthLayout from "./AuthLayout";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 
@@ -15,6 +16,9 @@ export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
+  
+  // States for the lamp animation
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: "", msg: "" });
@@ -72,118 +76,163 @@ export default function Login() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black text-white overflow-hidden flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_60%),radial-gradient(circle_at_bottom,rgba(168,85,247,0.22),transparent_60%)]" />
-
-      <div className="relative z-10 w-full max-w-md max-h-full flex flex-col gap-4 min-h-0">
+    <AuthLayout isPasswordFocused={isPasswordFocused} inputLength={identifier.length}>
+      <motion.div
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+          }
+        }}
+        className="flex flex-col h-full"
+      >
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="rounded-3xl bg-white/5 border border-white/15 shadow-[0_18px_60px_rgba(0,0,0,0.9)] backdrop-blur-xl px-6 py-7 md:px-8 md:py-9 flex flex-col min-h-0"
+          variants={{
+            hidden: { opacity: 0, y: 15 },
+            show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+          }}
+          className="flex flex-col items-center text-center mb-6 shrink-0"
         >
-          <div className="flex flex-col items-center text-center mb-5 shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-black/60 flex items-center justify-center mb-3 border border-white/20">
-              <img src={logo} alt="Hidden Lamp" className="w-12 h-12 object-contain" />
-            </div>
-
-            <h1 className="text-xl md:text-2xl font-extrabold">
-              Login to{" "}
-              <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-transparent bg-clip-text">
-                SteamBuddies
-              </span>
-            </h1>
-
-            <p className="mt-2 text-xs md:text-sm text-gray-300/90">
-              Access your STEAM lab content, projects and progress.
-            </p>
+          <div className="w-16 h-16 rounded-2xl bg-white/[0.05] flex items-center justify-center mb-4 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)] backdrop-blur-md">
+            <img src={logo} alt="Steam Buddies" className="w-10 h-10 object-contain drop-shadow-md" />
           </div>
 
-          {status?.msg ? (
-            <div
-              className={cn(
-                "mb-3 shrink-0 text-xs rounded-2xl px-3 py-2 border",
-                status.type === "success"
-                  ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30"
-                  : "text-red-300 bg-red-500/10 border-red-500/30"
-              )}
-            >
-              {status.msg}
-            </div>
-          ) : null}
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            Login to{" "}
+            <span className="bg-gradient-to-r from-lime-400 to-yellow-400 text-transparent bg-clip-text drop-shadow-sm">
+              SteamBuddies
+            </span>
+          </h1>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2 custom-scroll space-y-4 min-h-0">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-200">
-                Enter User ID
-              </label>
+          <p className="mt-2 text-xs md:text-sm text-gray-400">
+            Access your STEAM lab content, projects and progress.
+          </p>
+        </motion.div>
+
+        {status?.msg ? (
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, scale: 0.95 },
+              show: { opacity: 1, scale: 1 }
+            }}
+            className={cn(
+              "mb-4 shrink-0 text-xs rounded-xl px-4 py-3 border backdrop-blur-sm",
+              status.type === "success"
+                ? "text-lime-300 bg-lime-500/10 border-lime-500/20 shadow-[0_0_15px_rgba(132,204,22,0.1)]"
+                : "text-red-300 bg-red-500/10 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+            )}
+          >
+            {status.msg}
+          </motion.div>
+        ) : null}
+
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-2 custom-scroll space-y-4 min-h-0">
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, x: -10 },
+              show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+            }}
+            className="space-y-1.5"
+          >
+            <label className="text-[13px] font-medium text-gray-300 ml-1">
+              User ID
+            </label>
+            <input
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+              placeholder="Enter your ID"
+              className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm outline-none
+              focus:border-lime-400/50 focus:bg-white/[0.05] focus:ring-4 focus:ring-lime-400/10 placeholder:text-gray-500 transition-all duration-300"
+            />
+          </motion.div>
+
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, x: -10 },
+              show: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+            }}
+            className="space-y-1.5"
+          >
+            <label className="text-[13px] font-medium text-gray-300 ml-1">Password</label>
+            <div className="relative">
               <input
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                type={showPass ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 required
-                placeholder="Enter your ID"
-                className="w-full rounded-2xl bg-black/60 border border-white/15 px-4 py-2.5 text-sm outline-none
-                focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 placeholder:text-gray-500"
+                placeholder="Enter your password"
+                className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm outline-none
+                focus:border-yellow-400/50 focus:bg-white/[0.05] focus:ring-4 focus:ring-yellow-400/10 placeholder:text-gray-500 transition-all duration-300"
               />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-200">Password</label>
-              <div className="relative">
-                <input
-                  type={showPass ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="Enter your password"
-                  className="w-full rounded-2xl bg-black/60 border border-white/15 px-4 py-2.5 text-sm outline-none
-                  focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 placeholder:text-gray-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass((p) => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 hover:text-gray-100"
-                >
-                  {showPass ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-gray-400">
-              <span />
-              <button type="button" className="hover:text-cyan-300" onClick={() => nav("/forgot-password")}>
-                Forgot password?
+              <button
+                type="button"
+                onClick={() => setShowPass((p) => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 hover:text-white transition-colors px-2 py-1 bg-white/5 rounded-md"
+              >
+                {showPass ? "Hide" : "Show"}
               </button>
             </div>
+          </motion.div>
 
+          <motion.div
+            variants={{
+              hidden: { opacity: 0 },
+              show: { opacity: 1 }
+            }}
+            className="flex items-center justify-end text-[11px] text-gray-400 pt-1"
+          >
+            <button type="button" className="hover:text-lime-300 transition-colors" onClick={() => nav("/forgot-password")}>
+              Forgot password?
+            </button>
+          </motion.div>
+
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 15 },
+              show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+            }}
+            className="pt-2"
+          >
             <motion.button
               type="submit"
               disabled={loading}
-              whileHover={!loading ? { scale: 1.03, y: -1 } : {}}
-              whileTap={!loading ? { scale: 0.97 } : {}}
+              whileHover={!loading ? { scale: 1.02, y: -2 } : {}}
+              whileTap={!loading ? { scale: 0.98 } : {}}
               className={cn(
-                "mt-4 w-full shrink-0 py-2.5 rounded-full text-sm md:text-base font-semibold",
-                "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 shadow-[0_10px_40px_rgba(59,130,246,0.8)]",
-                loading && "opacity-70 cursor-not-allowed"
+                "w-full py-3 rounded-xl text-sm md:text-base font-bold tracking-wide relative overflow-hidden group border border-lime-500/20",
+                loading ? "bg-white/10 text-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-lime-500 to-yellow-500 text-slate-900 shadow-[0_10px_30px_-10px_rgba(132,204,22,0.6)] hover:shadow-[0_15px_40px_-10px_rgba(132,204,22,0.8)] transition-all duration-300"
               )}
             >
-              {loading ? "Logging in..." : "Login"}
+              <div className="absolute inset-0 bg-white/30 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+              <span className="relative z-10">{loading ? "Logging in..." : "Login"}</span>
             </motion.button>
-          </form>
+          </motion.div>
+        </form>
 
-          <div className="mt-4 shrink-0 text-center text-[11px] md:text-xs text-gray-400">
-            Don&apos;t have an account?{" "}
-            <button
-              type="button"
-              onClick={() => nav("/register")}
-              className="text-cyan-300 hover:text-cyan-200 font-medium"
-            >
-              Create one
-            </button>
-          </div>
+        <motion.div
+          variants={{
+            hidden: { opacity: 0 },
+            show: { opacity: 1, transition: { delay: 0.4 } }
+          }}
+          className="mt-6 shrink-0 text-center text-xs text-gray-400"
+        >
+          Don&apos;t have an account?{" "}
+          <button
+            type="button"
+            onClick={() => nav("/register")}
+            className="text-lime-400 hover:text-lime-300 font-semibold transition-colors drop-shadow-md"
+          >
+            Create one
+          </button>
         </motion.div>
-      </div>
-    </div>
+      </motion.div>
+    </AuthLayout>
   );
 }

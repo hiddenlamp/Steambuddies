@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { API_BASE_URL } from "../../utils/data";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 
 export default function NotificationBell({ language = "en" }) {
   const [notifications, setNotifications] = useState([]);
@@ -33,9 +34,32 @@ export default function NotificationBell({ language = "en" }) {
   useEffect(() => {
     fetchNotifications();
     
-    // Poll every 60 seconds
+    // Poll every 60 seconds as fallback
     const interval = setInterval(fetchNotifications, 60000);
     
+    // Listen for real-time notifications via Socket.IO
+    const socket = io(API_BASE_URL.replace("/api", ""));
+    socket.on("new_notification", () => {
+      // Play a short beep
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      } catch (e) {
+        console.error("Audio play failed:", e);
+      }
+      
+      fetchNotifications();
+    });
+
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
@@ -46,6 +70,7 @@ export default function NotificationBell({ language = "en" }) {
     return () => {
       clearInterval(interval);
       document.removeEventListener("mousedown", handleClickOutside);
+      socket.disconnect();
     };
   }, []);
 

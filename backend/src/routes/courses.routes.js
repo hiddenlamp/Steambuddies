@@ -106,6 +106,9 @@ router.post("/", requireAuth, requireRole("educator", "admin"), async (req, res)
       sender: req.user.id
     });
 
+    const io = req.app.get("io");
+    if (io) io.emit("new_notification");
+
     return res.status(201).json({ ok: true, course: created });
   } catch (e) {
     return res.status(400).json({ ok: false, message: e.message });

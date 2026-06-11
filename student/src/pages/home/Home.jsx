@@ -24,9 +24,17 @@ import {
   Award,
   Atom,
   Eye,
-  Workflow
+  Target,
+  MessageCircle,
+  Wrench,
+  Box,
+  Gamepad2,
+  Bot,
+  Zap
 } from "lucide-react";
 import NotificationBell from "../../components/shared/NotificationBell";
+import STEAMShortsSection from "../../components/STEAMShorts/STEAMShortsSection";
+import DailyChallengeCard from "../../components/Challenges/DailyChallengeCard";
 import { API_BASE_URL } from "../../utils/data";
 
 export default function Home() {
@@ -55,6 +63,7 @@ export default function Home() {
       return "en";
     }
   });
+  
 
   const changeLanguage = (lang) => {
     setLanguage(lang);
@@ -252,19 +261,7 @@ export default function Home() {
     return fallback;
   };
 
-  // Educator controlled challenge data
-  const quest = useMemo(
-    () => ({
-      label: { en: "DAILY ACTIVITY", hi: "डेली एक्टिविटी" },
-      duration: "15s · 30s",
-      title: { en: "Today’s Challenge", hi: "आज की चुनौती" },
-      desc: {
-        en: "Watch the short hands-on activity and try it out today.",
-        hi: "छोटी एक्टिविटी देखें और आज ट्राय करें। एजुकेटर इसे रोज़ अपडेट कर सकते हैं।",
-      },
-    }),
-    []
-  );
+
 
   const quickActions = [
     {
@@ -307,6 +304,32 @@ export default function Home() {
 
   // ===== Active School Courses (API) =====
   const [token, setToken] = useState(() => (localStorage.getItem("accessToken") || "").trim());
+
+  const [todayChallenges, setTodayChallenges] = useState([]);
+  const [selectedChallengeIndex, setSelectedChallengeIndex] = useState(null);
+  const selectedChallenge = selectedChallengeIndex !== null ? todayChallenges[selectedChallengeIndex] : null;
+
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE_URL}/challenges/today`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) setTodayChallenges(data.challenges);
+      })
+      .catch(err => console.error("Error fetching challenges:", err));
+  }, [token]);
+
+  const handleAttemptSuccess = (xp, coins) => {
+    awardReward(xp, coins, "Daily Challenger");
+    setRewardPopup({
+      xp: xp,
+      coins: coins,
+      badge: "Daily Challenger",
+      message: language === "en" ? "Correct Answer! Rewards Added!" : "सही जवाब! पुरस्कार जोड़े गए!"
+    });
+  };
   const [activeSchoolCourses, setActiveSchoolCourses] = useState([]);
   const [loadingSchoolCourses, setLoadingSchoolCourses] = useState(false);
   const [schoolCoursesError, setSchoolCoursesError] = useState("");
@@ -539,7 +562,9 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-[#030008] text-slate-900 dark:text-slate-50 transition-colors duration-500 pb-24 md:pb-8 md:pl-28 md:pr-8">
+    <div className="relative min-h-screen bg-[#f4f7fb] dark:bg-[#030008] text-slate-900 dark:text-slate-50 transition-colors duration-500 pb-24 md:pb-8 md:pl-28 md:pr-8 z-0">
+      {/* Light mode global elegant gradient background */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(224,242,254,0.5),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(23edea,0.2),transparent_40%)] dark:hidden pointer-events-none -z-10" />
       
       {/* ================= BACKGROUND GLOW ORBS (3D FLOATING FEEL) ================= */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -554,7 +579,7 @@ export default function Home() {
             scale: [1, 1.15, 0.9, 1],
           }}
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-cyan-400/12 dark:bg-cyan-500/10 blur-[130px]"
+          className="absolute top-[10%] left-[-5%] w-[45vw] h-[45vw] rounded-full bg-cyan-400/30 dark:bg-cyan-500/10 blur-[130px]"
         />
         <motion.div
           animate={{
@@ -563,7 +588,7 @@ export default function Home() {
             scale: [1, 0.9, 1.1, 1],
           }}
           transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[40%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-purple-400/12 dark:bg-purple-600/8 blur-[150px]"
+          className="absolute top-[40%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-purple-400/30 dark:bg-purple-600/8 blur-[150px]"
         />
         <motion.div
           animate={{
@@ -571,7 +596,7 @@ export default function Home() {
             y: [0, 60, -30, 0],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[5%] left-[20%] w-[35vw] h-[35vw] rounded-full bg-emerald-400/10 dark:bg-emerald-500/8 blur-[120px]"
+          className="absolute bottom-[5%] left-[20%] w-[35vw] h-[35vw] rounded-full bg-emerald-400/25 dark:bg-emerald-500/8 blur-[120px]"
         />
         <motion.div
           animate={{
@@ -579,7 +604,7 @@ export default function Home() {
             y: [0, -40, 50, 0],
           }}
           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[75%] right-[25%] w-[38vw] h-[38vw] rounded-full bg-rose-400/10 dark:bg-rose-500/8 blur-[120px]"
+          className="absolute top-[75%] right-[25%] w-[38vw] h-[38vw] rounded-full bg-rose-400/25 dark:bg-rose-500/8 blur-[120px]"
         />
       </div>
 
@@ -783,45 +808,47 @@ export default function Home() {
         </AnimatePresence>
 
         {/* ================= WELCOME BANNER PANEL ================= */}
-        <section className="relative overflow-hidden rounded-[36px] border border-slate-200/50 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.55)]">
+        <section className="relative overflow-hidden rounded-[36px] border border-white/60 dark:border-white/10 shadow-[0_30px_60px_rgba(14,165,233,0.15)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.55)]">
           {/* Internal gradient backgrounds */}
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-500 opacity-90 dark:opacity-0" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(6,182,212,0.4),transparent_60%)] dark:bg-[linear-gradient(135deg,#070716_0%,#090e24_50%,#13193a_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 dark:from-transparent dark:via-transparent dark:to-transparent" />
+          <div className="absolute inset-0 hidden dark:block bg-[linear-gradient(135deg,#070716_0%,#090e24_50%,#13193a_100%)]" />
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.3),transparent_70%)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(6,182,212,0.4),transparent_60%)]" />
 
           {/* Shiny backdrop overlay */}
           <div className="absolute inset-0 opacity-[0.06] dark:opacity-[0.08] bg-grid-mesh pointer-events-none" />
 
-          <div className="relative z-10 px-6 py-8 md:px-10 md:py-10 grid gap-8 md:grid-cols-[1.3fr,1fr] items-center">
+          <div className="relative z-10 px-5 py-6 md:px-10 md:py-10 grid gap-5 md:gap-8 md:grid-cols-[1fr,auto] items-center">
             
             {/* Greeting & Subtitle */}
-            <div className="space-y-4">
-              <p className="text-xs font-black tracking-widest text-sky-200 dark:text-cyan-300 uppercase">
+            <div className="space-y-3 md:space-y-4">
+              <p className="text-[10px] md:text-xs font-black tracking-widest text-sky-200 dark:text-cyan-300 uppercase">
                 {t.welcomeBack}
               </p>
-              <h1 className="text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+              <h1 className="text-3xl md:text-5xl font-black text-white leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
                 {currentUser?.name}
               </h1>
-              <p className="text-xs md:text-sm leading-relaxed text-sky-50 dark:text-slate-300 max-w-xl">
+              <p className="text-[11px] md:text-sm leading-relaxed text-sky-50 dark:text-slate-300 max-w-xl">
                 {language === "en"
                   ? "Launch interactive simulators, build hardware models, code logic, and explore the universe using futuristic science modules."
                   : "इंटरएक्टिव सिमुलेटर चलाएं, हार्डवेयर मॉडल बनाएं, कोडिंग करें और विज्ञान के उन्नत मॉड्यूल्स का उपयोग करके ब्रह्मांड का पता लगाएं।"}
               </p>
 
               {/* Gamification Stats */}
-              <div className="flex flex-wrap items-center gap-4 mt-4 pt-2 border-t border-white/10">
+              <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-white/10">
                 {/* Level badge */}
                 <div className="
-                  inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl aura-glow-cyan
-                  bg-white/10 border border-white/20 text-white font-black text-xs
+                  inline-flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-2xl aura-glow-cyan
+                  bg-white/10 border border-white/20 text-white font-black text-[10px] md:text-xs
                 ">
-                  <span className="w-5 h-5 rounded-lg flex items-center justify-center bg-cyan-400 text-slate-950 font-black text-[10px]">
+                  <span className="w-4 h-4 md:w-5 md:h-5 rounded-md md:rounded-lg flex items-center justify-center bg-cyan-400 text-slate-950 font-black text-[9px] md:text-[10px]">
                     {gamification.level}
                   </span>
                   <span>Level {gamification.level}</span>
                 </div>
 
                 {/* XP Progress bar */}
-                <div className="flex items-center gap-2 flex-1 min-w-[150px]">
+                <div className="flex items-center gap-2 flex-1 min-w-[150px] max-w-[300px]">
                   <div className="h-2 rounded-full bg-white/20 flex-1 overflow-hidden border border-white/10 relative">
                     <motion.div
                       className="absolute inset-y-0 left-0 bg-cyan-400 rounded-full"
@@ -836,8 +863,8 @@ export default function Home() {
 
                 {/* Coins badge */}
                 <div className="
-                  inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl
-                  bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 font-black text-xs
+                  inline-flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-2xl
+                  bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 font-black text-[10px] md:text-xs
                 ">
                   <span>🪙</span>
                   <span>{gamification.coins} {language === "en" ? "Coins" : "सिक्के"}</span>
@@ -845,62 +872,60 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Daily Challenge Quest card */}
-            <motion.div
-              onClick={handleStartChallenge}
-              whileHover={{ y: -6, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="
-                relative overflow-hidden rounded-3xl cursor-pointer p-[1.5px]
-                bg-gradient-to-tr from-cyan-400 via-sky-400 to-indigo-500
-                shadow-[0_20px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.45)]
-              "
-            >
-              <div className="
-                relative rounded-[22px] px-5 py-5 overflow-hidden backdrop-blur-xl
-                bg-white/80 dark:bg-slate-950/60
-              ">
-                {/* Internal card mesh grid */}
-                <div className="absolute inset-0 bg-grid-mesh opacity-20 pointer-events-none" />
-                <div className="absolute -top-12 -left-12 w-32 h-32 bg-cyan-400/20 rounded-full blur-2xl" />
-
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <span className="
-                    px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase
-                    bg-cyan-500/10 text-cyan-600 dark:bg-cyan-400/10 dark:text-cyan-300 border border-cyan-500/20
-                  ">
-                    ⚡ {quest.label[language]}
-                  </span>
-                  <span className="text-[10px] font-black text-slate-500 dark:text-slate-400">
-                    ⏱️ {quest.duration}
-                  </span>
+            {/* Right Col: Quick Stats or Graphic */}
+            <div className="flex justify-start md:justify-end items-center relative pr-0 md:pr-4 mt-1 md:mt-0 w-full">
+              {todayChallenges.length > 0 ? (
+                <motion.div 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedChallengeIndex(0)}
+                  className="w-full md:max-w-[300px] rounded-2xl md:rounded-3xl p-[2px] bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 cursor-pointer shadow-[0_15px_30px_rgba(6,182,212,0.2)] md:shadow-[0_20px_40px_rgba(6,182,212,0.3)] hover:shadow-[0_20px_40px_rgba(6,182,212,0.4)] md:hover:shadow-[0_25px_50px_rgba(6,182,212,0.5)] transition-all"
+                >
+                  <div className="rounded-[20px] md:rounded-[22px] bg-[#0A0F1C]/90 backdrop-blur-xl p-3 sm:p-4 md:p-6 flex flex-row md:flex-col items-center justify-between md:justify-center text-left md:text-center relative overflow-hidden gap-3 md:gap-0">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(6,182,212,0.2),transparent_70%)]" />
+                    
+                    <div className="w-10 h-10 md:w-16 md:h-16 shrink-0 rounded-full bg-cyan-500/20 flex items-center justify-center md:mb-4 border border-cyan-500/30">
+                      <Target className="w-5 h-5 md:w-8 md:h-8 text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+                    </div>
+                    
+                    <div className="flex-1 md:w-full">
+                      <h4 className="text-white text-sm md:text-xl font-black md:mb-1 leading-tight">
+                        {language === "en" ? `${todayChallenges.length} Quest${todayChallenges.length > 1 ? 's' : ''} Available!` : `${todayChallenges.length} दैनिक खोज उपलब्ध!`}
+                      </h4>
+                      <p className="text-cyan-200/70 text-[10px] md:text-xs font-bold md:mb-4 hidden sm:block md:block">
+                        {language === "en" ? "Solve now to earn XP" : "XP कमाने के लिए हल करें"}
+                      </p>
+                    </div>
+                    
+                    <button className="px-4 py-2 md:px-5 shrink-0 rounded-full bg-cyan-500 text-slate-900 font-bold text-xs md:text-sm hover:bg-cyan-400 transition md:w-full shadow-[0_0_10px_rgba(34,211,238,0.4)] md:shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+                      {language === "en" ? "Play Now" : "अभी खेलें"}
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="w-48 h-48 md:w-64 md:h-64 rounded-full border border-white/40 bg-white/15 dark:border-white/10 dark:bg-gradient-to-br dark:from-white/5 dark:to-white/0 backdrop-blur-xl flex flex-col items-center justify-center relative overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.15)] dark:shadow-2xl">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.5),transparent_70%)] dark:bg-[radial-gradient(circle_at_50%_0%,rgba(56,189,248,0.2),transparent_70%)]" />
+                  <Award size={48} className="text-yellow-300 drop-shadow-[0_0_15px_rgba(250,204,21,0.6)] mb-3" />
+                  <h4 className="text-white text-3xl font-black drop-shadow-md">{gamification.xp}</h4>
+                  <p className="text-white drop-shadow-md dark:text-sky-300/70 text-[10px] font-bold tracking-widest uppercase mt-1 text-center">Total XP<br/>Earned</p>
                 </div>
-
-                <h3 className="text-lg font-black text-slate-900 dark:text-white leading-snug">
-                  {quest.title[language]}
-                </h3>
-                
-                <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed line-clamp-2">
-                  {quest.desc[language]}
-                </p>
-
-                <div className="mt-5 flex items-center justify-between border-t border-slate-200/50 dark:border-white/5 pt-3">
-                  <span className="text-[11px] font-extrabold text-cyan-600 dark:text-cyan-400">
-                    {language === "en" ? "Challenge Details" : "चुनौती का विवरण"}
-                  </span>
-                  
-                  <span className="
-                    inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white
-                    bg-gradient-to-r from-cyan-500 to-indigo-500 shadow-md shadow-cyan-500/20
-                  ">
-                    {language === "en" ? "Start Now" : "शुरू करें"}
-                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </div>
-              </div>
-            </motion.div>
+              )}
+            </div>
 
           </div>
+        </section>
+
+
+
+        {/* ================= STEAM SHORTS SECTION (IG STORIES STYLE) ================= */}
+        <section className="w-full">
+          <div className="mb-2 flex items-center justify-between px-2">
+            <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="p-2 bg-pink-500/10 text-pink-500 rounded-xl"><Sparkles size={20} /></span>
+              {language === "en" ? "STEAM Shorts" : "स्टीम शॉर्ट्स"}
+            </h2>
+          </div>
+          <STEAMShortsSection language={language} />
         </section>
 
         {/* ================= INTERACTIVE SCIENCE SECTION (3D TILT CARDS) ================= */}
@@ -931,13 +956,13 @@ export default function Home() {
               onMouseLeave={reset3DTilt}
               onClick={handleSolarSystemClick}
               className="
-                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[1px]
-                bg-gradient-to-tr from-cyan-500 to-blue-600
-                shadow-[0_15px_35px_rgba(6,182,212,0.12)]
+                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[2px]
+                bg-gradient-to-tr from-cyan-400 to-blue-500
+                shadow-[0_20px_40px_rgba(6,182,212,0.2)] hover:shadow-[0_25px_50px_rgba(6,182,212,0.3)]
               "
               style={{ transformStyle: "preserve-3d" }}
             >
-              <div className="relative rounded-[23px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/95 dark:bg-slate-950/80">
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/90 backdrop-blur-xl dark:bg-slate-950/80">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(6,182,212,0.15),transparent_50%)]" />
                 
                 {/* 3D reflection highlight */}
@@ -982,13 +1007,13 @@ export default function Home() {
               onMouseLeave={reset3DTilt}
               onClick={handleHumanBodyClick}
               className="
-                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[1px]
-                bg-gradient-to-tr from-rose-500 to-pink-600
-                shadow-[0_15px_35px_rgba(244,63,94,0.12)]
+                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[2px]
+                bg-gradient-to-tr from-rose-400 to-pink-500
+                shadow-[0_20px_40px_rgba(244,63,94,0.2)] hover:shadow-[0_25px_50px_rgba(244,63,94,0.3)]
               "
               style={{ transformStyle: "preserve-3d" }}
             >
-              <div className="relative rounded-[23px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/95 dark:bg-slate-950/80">
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/90 backdrop-blur-xl dark:bg-slate-950/80">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(244,63,94,0.15),transparent_50%)]" />
                 <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -1031,13 +1056,13 @@ export default function Home() {
               onMouseLeave={reset3DTilt}
               onClick={handleRoboticsClick}
               className="
-                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[1px]
-                bg-gradient-to-tr from-purple-500 to-indigo-600
-                shadow-[0_15px_35px_rgba(99,102,241,0.12)]
+                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[2px]
+                bg-gradient-to-tr from-purple-400 to-indigo-500
+                shadow-[0_20px_40px_rgba(99,102,241,0.2)] hover:shadow-[0_25px_50px_rgba(99,102,241,0.3)]
               "
               style={{ transformStyle: "preserve-3d" }}
             >
-              <div className="relative rounded-[23px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/95 dark:bg-slate-950/80">
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/90 backdrop-blur-xl dark:bg-slate-950/80">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.15),transparent_50%)]" />
                 <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -1080,13 +1105,13 @@ export default function Home() {
               onMouseLeave={reset3DTilt}
               onClick={handleMoleculesClick}
               className="
-                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[1px]
-                bg-gradient-to-tr from-emerald-500 to-teal-600
-                shadow-[0_15px_35px_rgba(16,185,129,0.12)]
+                group relative tilt-element rounded-3xl overflow-hidden cursor-pointer p-[2px]
+                bg-gradient-to-tr from-emerald-400 to-teal-500
+                shadow-[0_20px_40px_rgba(16,185,129,0.2)] hover:shadow-[0_25px_50px_rgba(16,185,129,0.3)]
               "
               style={{ transformStyle: "preserve-3d" }}
             >
-              <div className="relative rounded-[23px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/95 dark:bg-slate-950/80">
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col justify-between overflow-hidden bg-white/90 backdrop-blur-xl dark:bg-slate-950/80">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.15),transparent_50%)]" />
                 <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -1127,13 +1152,20 @@ export default function Home() {
         </section>
 
         {/* ================== ACTIVE COURSES IN YOUR SCHOOL ================== */}
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
+        <section className="space-y-5">
+          <div className="text-center md:text-left flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+              <span className="
+                inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase
+                bg-purple-500/10 text-purple-600 dark:bg-purple-400/10 dark:text-purple-300 border border-purple-500/20
+              ">
+                <BookOpen size={12} />
+                {language === "en" ? "CURRENT ENROLLMENTS" : "वर्तमान नामांकन"}
+              </span>
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight mt-2 text-slate-900 dark:text-white">
                 {t.activeCoursesTitle}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl mt-1">
                 {t.activeCoursesSub}
               </p>
             </div>
@@ -1146,8 +1178,8 @@ export default function Home() {
           </div>
 
           {/* Cards Container Grid */}
-          <div className="relative rounded-[32px] p-1 overflow-hidden border border-slate-200/50 dark:border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.03)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-            <div className="absolute inset-0 bg-white/70 dark:bg-[#07050e]/90" />
+          <div className="relative rounded-[32px] p-2 overflow-hidden border border-slate-200 shadow-[0_15px_40px_rgba(0,0,0,0.06)] dark:border-white/10 dark:shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-3xl dark:bg-[#07050e]/90" />
             <div className="absolute inset-0 bg-grid-mesh opacity-[0.06]" />
 
             <div className="relative z-10 p-5 md:p-6 min-h-[220px]">
@@ -1317,19 +1349,23 @@ export default function Home() {
         </section>
 
         {/* ====================== QUICK ACCESS BAR (MATTE STYLE) ====================== */}
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
+        <section className="space-y-5">
+          <div className="text-center md:text-left flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+              <span className="
+                inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase
+                bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-300 border border-amber-500/20
+              ">
+                <Zap size={12} />
+                {language === "en" ? "SHORTCUTS" : "शॉर्टकट"}
+              </span>
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight mt-2 text-slate-900 dark:text-white">
                 {t.quickAccessTitle}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl mt-1">
                 {language === "en" ? "Access shortcut learning material instantly." : "शॉर्टकट शिक्षण सामग्री तक तुरंत पहुंचें।"}
               </p>
             </div>
-            <span className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">
-              SHORTCUTS
-            </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
@@ -1337,33 +1373,33 @@ export default function Home() {
               
               const MATTE_COLORS = [
                 {
-                  bg: "bg-blue-500/10 border-blue-500/15 hover:border-blue-500/40 text-blue-600 dark:text-blue-300",
-                  iconBg: "bg-blue-500/15 text-blue-600 dark:bg-blue-500/25",
+                  bg: "bg-blue-50/80 border-blue-100 hover:border-blue-300 hover:bg-blue-100/80 text-blue-800 dark:bg-blue-500/10 dark:border-blue-500/15 dark:text-blue-300",
+                  iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-500/25",
                   glow: "rgba(59,130,246,0.15)"
                 },
                 {
-                  bg: "bg-violet-500/10 border-violet-500/15 hover:border-violet-500/40 text-violet-600 dark:text-violet-300",
-                  iconBg: "bg-violet-500/15 text-violet-600 dark:bg-violet-500/25",
+                  bg: "bg-violet-50/80 border-violet-100 hover:border-violet-300 hover:bg-violet-100/80 text-violet-800 dark:bg-violet-500/10 dark:border-violet-500/15 dark:text-violet-300",
+                  iconBg: "bg-violet-100 text-violet-600 dark:bg-violet-500/25",
                   glow: "rgba(139,92,246,0.15)"
                 },
                 {
-                  bg: "bg-amber-500/10 border-amber-500/15 hover:border-amber-500/40 text-amber-600 dark:text-amber-300",
-                  iconBg: "bg-amber-500/15 text-amber-600 dark:bg-amber-500/25",
+                  bg: "bg-amber-50/80 border-amber-100 hover:border-amber-300 hover:bg-amber-100/80 text-amber-800 dark:bg-amber-500/10 dark:border-amber-500/15 dark:text-amber-300",
+                  iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/25",
                   glow: "rgba(245,158,11,0.15)"
                 },
                 {
-                  bg: "bg-emerald-500/10 border-emerald-500/15 hover:border-emerald-500/40 text-emerald-600 dark:text-emerald-300",
-                  iconBg: "bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/25",
+                  bg: "bg-emerald-50/80 border-emerald-100 hover:border-emerald-300 hover:bg-emerald-100/80 text-emerald-800 dark:bg-emerald-500/10 dark:border-emerald-500/15 dark:text-emerald-300",
+                  iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/25",
                   glow: "rgba(16,185,129,0.15)"
                 },
                 {
-                  bg: "bg-rose-500/10 border-rose-500/15 hover:border-rose-500/40 text-rose-600 dark:text-rose-300",
-                  iconBg: "bg-rose-500/15 text-rose-600 dark:bg-rose-500/25",
+                  bg: "bg-rose-50/80 border-rose-100 hover:border-rose-300 hover:bg-rose-100/80 text-rose-800 dark:bg-rose-500/10 dark:border-rose-500/15 dark:text-rose-300",
+                  iconBg: "bg-rose-100 text-rose-600 dark:bg-rose-500/25",
                   glow: "rgba(244,63,94,0.15)"
                 },
                 {
-                  bg: "bg-cyan-500/10 border-cyan-500/15 hover:border-cyan-500/40 text-cyan-600 dark:text-cyan-300",
-                  iconBg: "bg-cyan-500/15 text-cyan-600 dark:bg-cyan-500/25",
+                  bg: "bg-cyan-50/80 border-cyan-100 hover:border-cyan-300 hover:bg-cyan-100/80 text-cyan-800 dark:bg-cyan-500/10 dark:border-cyan-500/15 dark:text-cyan-300",
+                  iconBg: "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/25",
                   glow: "rgba(6,182,212,0.15)"
                 }
               ];
@@ -1378,7 +1414,7 @@ export default function Home() {
                   whileTap={{ scale: 0.96 }}
                   className={`
                     relative rounded-3xl p-5 border text-left flex flex-col justify-between min-h-[125px] overflow-hidden transition-all duration-300
-                    bg-white dark:bg-slate-950/60 border-slate-200 dark:border-white/5
+                    shadow-[0_8px_20px_rgba(0,0,0,0.04)]
                     ${design.bg}
                   `}
                 >
@@ -1403,6 +1439,102 @@ export default function Home() {
                 </motion.button>
               );
             })}
+          </div>
+        </section>
+
+        {/* ================= REFERENCE TOOLS SECTION ================= */}
+        <section className="space-y-5">
+          <div className="text-center md:text-left flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span className="
+                inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase
+                bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-300 border border-blue-500/20
+              ">
+                <Wrench size={12} />
+                {language === "en" ? "REFERENCE TOOLS" : "संदर्भ उपकरण"}
+              </span>
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight mt-2 text-slate-900 dark:text-white">
+                {language === "en" ? "Software & Resources" : "सॉफ्टवेयर और संसाधन"}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl mt-1">
+                {language === "en"
+                  ? "Essential tools for 3D designing, slicing, game making, and robotics."
+                  : "3D डिजाइनिंग, गेम मेकिंग और रोबोटिक्स के लिए आवश्यक उपकरण।"}
+              </p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => nav("/reference-tools")}
+              className="text-xs font-black text-blue-600 dark:text-blue-400 flex items-center justify-center md:justify-start gap-1 bg-blue-500/10 px-4 py-2 rounded-xl hover:bg-blue-500/20 transition-colors"
+            >
+              {language === "en" ? "View All" : "सभी देखें"}
+              <ArrowRight size={14} />
+            </motion.button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <motion.a
+              href="https://www.tinkercad.com/" target="_blank" rel="noopener noreferrer"
+              whileHover={{ y: -5, scale: 1.03 }}
+              className="group relative overflow-hidden rounded-3xl p-[2px] bg-gradient-to-tr from-blue-400 to-cyan-500 shadow-[0_15px_35px_rgba(56,189,248,0.25)] hover:shadow-[0_25px_45px_rgba(56,189,248,0.4)] transition-shadow"
+            >
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col overflow-hidden bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.15),transparent_60%)]" />
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white mb-6 self-start shadow-lg shadow-cyan-500/30">
+                  <Box className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:text-blue-500 dark:group-hover:text-cyan-400 transition-colors">Tinkercad</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-xs font-bold">3D Design & Electronics</p>
+              </div>
+            </motion.a>
+
+            <motion.a
+              href="https://scratch.mit.edu/" target="_blank" rel="noopener noreferrer"
+              whileHover={{ y: -5, scale: 1.03 }}
+              className="group relative overflow-hidden rounded-3xl p-[2px] bg-gradient-to-tr from-pink-400 to-rose-500 shadow-[0_15px_35px_rgba(244,63,94,0.25)] hover:shadow-[0_25px_45px_rgba(244,63,94,0.4)] transition-shadow"
+            >
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col overflow-hidden bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(244,63,94,0.15),transparent_60%)]" />
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 text-white mb-6 self-start shadow-lg shadow-rose-500/30">
+                  <Gamepad2 className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:text-rose-500 transition-colors">Scratch</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-xs font-bold">Game & Animations</p>
+              </div>
+            </motion.a>
+
+            <motion.a
+              href="https://mblock.makeblock.com/" target="_blank" rel="noopener noreferrer"
+              whileHover={{ y: -5, scale: 1.03 }}
+              className="group relative overflow-hidden rounded-3xl p-[2px] bg-gradient-to-tr from-emerald-400 to-teal-500 shadow-[0_15px_35px_rgba(16,185,129,0.25)] hover:shadow-[0_25px_45px_rgba(16,185,129,0.4)] transition-shadow"
+            >
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col overflow-hidden bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.15),transparent_60%)]" />
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white mb-6 self-start shadow-lg shadow-emerald-500/30">
+                  <Bot className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:text-emerald-500 transition-colors">mBlock</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-xs font-bold">Robotics & Coding</p>
+              </div>
+            </motion.a>
+
+            <motion.a
+              href="https://www.anycubic.com/pages/anycubic-slicer-software" target="_blank" rel="noopener noreferrer"
+              whileHover={{ y: -5, scale: 1.03 }}
+              className="group relative overflow-hidden rounded-3xl p-[2px] bg-gradient-to-tr from-amber-400 to-orange-500 shadow-[0_15px_35px_rgba(245,158,11,0.25)] hover:shadow-[0_25px_45px_rgba(245,158,11,0.4)] transition-shadow"
+            >
+              <div className="relative rounded-[22px] p-6 h-full flex flex-col overflow-hidden bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.15),transparent_60%)]" />
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white mb-6 self-start shadow-lg shadow-orange-500/30">
+                  <Layers className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:text-orange-500 transition-colors">Anycubic Slicer</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-xs font-bold">3D Slicing</p>
+              </div>
+            </motion.a>
+
           </div>
         </section>
 
@@ -1578,8 +1710,8 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* STEAMbuddy Mascot Assistant */}
-      <div className="fixed bottom-20 md:bottom-6 right-6 z-40">
+      {/* ================= STEAMBUDDY MASCOT ASSISTANT ================= */}
+      <div className="fixed bottom-36 md:bottom-24 right-6 z-40">
         <motion.button
           onClick={() => setMascotOpen(true)}
           whileHover={{ scale: 1.08 }}
@@ -1590,8 +1722,8 @@ export default function Home() {
           "
         >
           🤖
-          <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-rose-500 animate-ping" />
-          <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-rose-500" />
+          <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-cyan-500 animate-ping" />
+          <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-cyan-500" />
         </motion.button>
       </div>
 
@@ -1612,7 +1744,7 @@ export default function Home() {
               exit={{ opacity: 0, y: 40, scale: 0.95 }}
               transition={{ type: "spring", stiffness: 280, damping: 25 }}
               className="
-                fixed bottom-24 right-4 left-4 md:left-auto md:right-8 md:w-[360px] z-50 p-5 rounded-[28px] border space-y-4
+                fixed bottom-[14rem] md:bottom-40 right-4 left-4 md:left-auto md:right-8 md:w-[360px] z-50 p-5 rounded-[28px] border space-y-4
                 bg-white border-slate-200 shadow-2xl backdrop-blur-xl
                 dark:bg-slate-950/90 dark:border-white/10
               "
@@ -1691,7 +1823,82 @@ export default function Home() {
           </>
         )}
       </AnimatePresence>
+
+      {/* DOUBT CHAT FLOATING WIDGET */}
+      <div className="fixed bottom-20 md:bottom-6 right-6 z-40">
+        <motion.button
+          onClick={() => nav("/doubts")}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          className="
+            w-14 h-14 rounded-full flex items-center justify-center border aura-glow-cyan relative
+            bg-blue-600 border-blue-400/40 text-white shadow-lg shadow-blue-500/30
+          "
+        >
+          <MessageCircle className="w-6 h-6" />
+          <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+          <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-rose-500" />
+        </motion.button>
       </div>
+      </div>
+
+      {/* ================= CHALLENGE MODAL ================= */}
+      <AnimatePresence>
+        {selectedChallenge && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-md bg-slate-900/80"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedChallengeIndex(null)}
+                className="absolute -top-12 right-0 md:-right-12 text-white/50 hover:text-white p-2 rounded-full hover:bg-white/10 transition"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+
+              {todayChallenges.length > 1 && (
+                <div className="absolute -top-12 left-0 flex items-center gap-2">
+                  <button 
+                    onClick={() => setSelectedChallengeIndex(prev => prev > 0 ? prev - 1 : todayChallenges.length - 1)}
+                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition backdrop-blur-md font-bold"
+                  >
+                    ←
+                  </button>
+                  <span className="text-white/80 font-bold text-xs bg-black/50 px-3 py-1 rounded-full">
+                    {selectedChallengeIndex + 1} / {todayChallenges.length}
+                  </span>
+                  <button 
+                    onClick={() => setSelectedChallengeIndex(prev => prev < todayChallenges.length - 1 ? prev + 1 : 0)}
+                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition backdrop-blur-md font-bold"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+
+              <DailyChallengeCard 
+                challenge={selectedChallenge} 
+                language={language} 
+                token={token} 
+                onAttemptSuccess={(pts) => {
+                  handleAttemptSuccess(pts);
+                  // Optional: Automatically close after success, or let the user see the result
+                  // setTimeout(() => setSelectedChallenge(null), 3000);
+                }} 
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

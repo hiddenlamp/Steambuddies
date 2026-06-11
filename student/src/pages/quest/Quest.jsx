@@ -147,7 +147,7 @@ export default function Quest() {
 
         if (!mounted) return;
 
-        const arr = Array.isArray(list) ? list : [];
+        const arr = Array.isArray(list) ? [...list].reverse() : [];
         setStories(arr);
         setActive(0);
 
@@ -236,7 +236,8 @@ export default function Quest() {
         const p = d ? v.currentTime / d : 0;
 
         setProgress(clamp(p, 0, 1));
-        if (p >= 0.999) next();
+        // We removed `if (p >= 0.999) next();` because the video's onEnded event handles the transition perfectly.
+        // Calling it here causes infinite skips.
 
         rafRef.current = requestAnimationFrame(tick);
         return;

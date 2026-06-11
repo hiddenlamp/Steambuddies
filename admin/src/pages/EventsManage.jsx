@@ -115,7 +115,7 @@ export default function EventsManage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-10 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -156,7 +156,7 @@ export default function EventsManage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
+            <table className="w-full text-left text-sm whitespace-nowrap min-w-[800px]">
               <thead className="bg-gray-50 border-b border-gray-100 text-gray-600">
                 <tr>
                   <th className="px-6 py-4 font-medium">Event Title (EN)</th>

@@ -3,5 +3,6 @@ const { requireAuth } = require("../middleware/auth.middleware"); // aapka exist
 const { getMyProfile } = require("../controllers/profile.controller");
 
 router.get("/me", requireAuth, getMyProfile);
+router.put("/me", requireAuth, require("../controllers/profile.controller").updateProfile);
 
 module.exports = router;

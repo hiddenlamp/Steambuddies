@@ -12,6 +12,7 @@ const http = require("http");
 const mongoose = require("mongoose");
 const app = require("./app");
 const { connectDB } = require("./config/db");
+const { Server } = require("socket.io");
 
 let connectPromise = null;
 
@@ -83,6 +84,22 @@ if (require.main === module) {
           res.end(JSON.stringify({ ok: false, message: "DB Connection Error" }));
         }
       });
+  });
+
+  const io = new Server(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE"]
+    }
+  });
+
+  app.set("io", io);
+
+  io.on("connection", (socket) => {
+    console.log("🟢 Socket connected:", socket.id);
+    socket.on("disconnect", () => {
+      console.log("🔴 Socket disconnected:", socket.id);
+    });
   });
 
   (async () => {

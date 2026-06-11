@@ -1,6 +1,7 @@
 import { useContext, useMemo, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { ThemeContext } from "../context/ThemeContext";
+import NotificationBell from "./NotificationBell";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 
@@ -69,6 +70,9 @@ export default function Navbar() {
 
           {/* RIGHT: ACTIONS */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Notification Bell */}
+            <NotificationBell language="en" />
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}

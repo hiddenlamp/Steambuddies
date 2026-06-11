@@ -5,19 +5,12 @@ const fs = require("fs");
 const multer = require("multer");
 
 const { requireAuth } = require("../middleware/auth.middleware");
+const Activity = require("../models/Activity");
+const ActivityLike = require("../models/ActivityLike");
+const ActivityView = require("../models/ActivityView");
 
 const router = express.Router();
 
-/**
- * TEMP in-memory store (DEV)
- */
-const store = {
-  activities: [],            // newest first
-  likesByUser: new Map(),    // `${userId}:${activityId}` => true
-  seenByUser: new Set(),     // `${userId}:${activityId}`
-};
-
-const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const roleOf = (u) => String(u?.role || "").toLowerCase();
 const userIdOf = (u) => String(u?._id || u?.id || "guest");
 
@@ -26,29 +19,43 @@ function assertEducator(req) {
   return r === "educator" || r === "admin";
 }
 
-function toClientActivity(a, user) {
-  const userId = userIdOf(user);
-  const likedKey = `${userId}:${a.id}`;
-  const seenKey = `${userId}:${a.id}`;
+async function toClientActivity(a, userId) {
+  const isGuest = userId === "guest";
+  
+  let liked = false;
+  let seen = false;
+
+  if (!isGuest) {
+    const likeCount = await ActivityLike.countDocuments({ activity: a._id, user: userId });
+    liked = likeCount > 0;
+    const viewCount = await ActivityView.countDocuments({ activity: a._id, user: userId });
+    seen = viewCount > 0;
+  }
 
   return {
-    id: a.id,
+    id: a._id,
     type: a.type,
-    src: a.src || "",
+    src: a.mediaUrl || "",
     title: a.title || { en: "", hi: "" },
     caption: a.caption || { en: "", hi: "" },
     badge: a.badge || { en: "STEAM", hi: "STEAM" },
     durationSec: a.durationSec ?? 12,
-    bgIndex: a.bgIndex ?? 0,
-    educator: a.educator || { id: "educator", name: "Educator", avatarLetter: "E" },
+    bgIndex: 0,
+    educator: {
+      id: a.educator?._id,
+      name: a.educator?.fullName || a.educator?.name || "Educator",
+      avatarLetter: ((a.educator?.fullName || a.educator?.name)?.[0] || "E").toUpperCase(),
+      profilePic: a.educator?.profilePic
+    },
     stats: {
       views: a.stats?.views ?? 0,
       likes: a.stats?.likes ?? 0,
     },
     my: {
-      liked: !!store.likesByUser.get(likedKey),
-      seen: store.seenByUser.has(seenKey),
+      liked,
+      seen,
     },
+    createdAt: a.createdAt
   };
 }
 
@@ -62,7 +69,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname || "");
-    cb(null, `${Date.now()}-${uid()}${ext}`);
+    const uid = Math.random().toString(36).slice(2);
+    cb(null, `${Date.now()}-${uid}${ext}`);
   },
 });
 
@@ -76,13 +84,12 @@ const upload = multer({
   },
 });
 
-// ✅ Safe multer wrapper (prevents server crash / white page)
+// ✅ Safe multer wrapper
 function uploadSingleSafe(field) {
   return (req, res, next) => {
     upload.single(field)(req, res, (err) => {
       if (!err) return next();
 
-      // Multer specific error
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
           return res.status(400).json({ ok: false, message: "File too large (max 50MB)" });
@@ -90,7 +97,6 @@ function uploadSingleSafe(field) {
         return res.status(400).json({ ok: false, message: "Invalid file. Only image/video allowed." });
       }
 
-      // Generic error
       return res.status(400).json({ ok: false, message: err.message || "Upload failed" });
     });
   };
@@ -101,9 +107,25 @@ function uploadSingleSafe(field) {
  * Public feed (optional login)
  */
 router.get("/feed", async (req, res) => {
-  const user = req.user || { id: "guest" };
-  const list = store.activities.slice(0, 50).map((a) => toClientActivity(a, user));
-  return res.json({ ok: true, activities: list });
+  try {
+    const user = req.user || { id: "guest" };
+    const me = userIdOf(user);
+    
+    // Fetch activities that haven't expired
+    const activities = await Activity.find({
+      $or: [{ expiresAt: { $gt: new Date() } }, { expiresAt: { $exists: false } }]
+    })
+    .populate("educator", "fullName name profilePic")
+    .sort({ createdAt: -1 })
+    .limit(50);
+
+    const list = await Promise.all(activities.map(a => toClientActivity(a, me)));
+    
+    return res.json({ ok: true, activities: list });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ok: false, message: "Failed to fetch activities"});
+  }
 });
 
 /**
@@ -117,12 +139,19 @@ router.get("/my", requireAuth, async (req, res) => {
 
   const me = userIdOf(req.user);
 
-  const list = store.activities
-    .filter((a) => a.educator?.id === me)
-    .slice(0, 100)
-    .map((a) => toClientActivity(a, { id: me }));
+  try {
+    const activities = await Activity.find({ educator: me })
+      .populate("educator", "fullName name profilePic")
+      .sort({ createdAt: -1 })
+      .limit(100);
 
-  return res.json({ ok: true, activities: list });
+    const list = await Promise.all(activities.map(a => toClientActivity(a, me)));
+
+    return res.json({ ok: true, activities: list });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ok: false, message: "Failed to fetch my activities"});
+  }
 });
 
 /**
@@ -136,7 +165,6 @@ router.post("/", requireAuth, uploadSingleSafe("file"), async (req, res) => {
 
   const type = String(req.body.type || "").toLowerCase();
   const durationSec = Number(req.body.durationSec || 12);
-  const bgIndex = Number(req.body.bgIndex || 0);
 
   if (!["video", "image", "text"].includes(type)) {
     return res.status(400).json({ ok: false, message: "Invalid type" });
@@ -156,31 +184,29 @@ router.post("/", requireAuth, uploadSingleSafe("file"), async (req, res) => {
 
   const educatorId = userIdOf(req.user);
 
-  const activity = {
-    id: uid(),
-    type,
-    src,
-    title,
-    caption,
-    badge,
-    durationSec: Math.max(5, Math.min(durationSec, 60)),
-    bgIndex: Math.max(0, Math.min(bgIndex, 2)),
-    educator: {
-      id: educatorId,
-      name: req.user.name || "Educator",
-      avatarLetter: (req.user.name?.[0] || "E").toUpperCase(),
-    },
-    stats: { views: 0, likes: 0 },
-    createdAt: new Date().toISOString(),
-  };
+  try {
+    const newActivity = await Activity.create({
+      educator: educatorId,
+      type,
+      mediaUrl: src,
+      title,
+      caption,
+      badge,
+      durationSec: Math.max(5, Math.min(durationSec, 60)),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    });
 
-  store.activities.unshift(activity);
+    await newActivity.populate("educator", "fullName name profilePic");
 
-  return res.status(201).json({
-    ok: true,
-    message: "Activity created",
-    activity: toClientActivity(activity, { id: educatorId }),
-  });
+    return res.status(201).json({
+      ok: true,
+      message: "Activity created",
+      activity: await toClientActivity(newActivity, educatorId),
+    });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ok: false, message: "Failed to create activity"});
+  }
 });
 
 /**
@@ -195,22 +221,26 @@ router.delete("/:id", requireAuth, async (req, res) => {
   const me = userIdOf(req.user);
   const id = req.params.id;
 
-  const idx = store.activities.findIndex((a) => a.id === id);
-  if (idx === -1) return res.status(404).json({ ok: false, message: "Activity not found" });
+  try {
+    const a = await Activity.findById(id);
+    if (!a) return res.status(404).json({ ok: false, message: "Activity not found" });
 
-  const a = store.activities[idx];
-  if (role !== "admin" && a.educator?.id !== me) {
-    return res.status(403).json({ ok: false, message: "Not allowed" });
+    if (role !== "admin" && String(a.educator) !== me) {
+      return res.status(403).json({ ok: false, message: "Not allowed" });
+    }
+
+    if (a.mediaUrl?.startsWith("/uploads/activities/")) {
+      const filename = a.mediaUrl.split("/uploads/activities/")[1];
+      const fp = path.join(UPLOAD_DIR, filename);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    }
+
+    await Activity.findByIdAndDelete(id);
+    return res.json({ ok: true, message: "Activity deleted" });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ok: false, message: "Failed to delete"});
   }
-
-  if (a.src?.startsWith("/uploads/activities/")) {
-    const filename = a.src.split("/uploads/activities/")[1];
-    const fp = path.join(UPLOAD_DIR, filename);
-    if (fs.existsSync(fp)) fs.unlinkSync(fp);
-  }
-
-  store.activities.splice(idx, 1);
-  return res.json({ ok: true, message: "Activity deleted" });
 });
 
 /**
@@ -220,21 +250,27 @@ router.post("/:id/like", requireAuth, async (req, res) => {
   const userId = userIdOf(req.user);
   const id = req.params.id;
 
-  const a = store.activities.find((x) => x.id === id);
-  if (!a) return res.status(404).json({ ok: false, message: "Activity not found" });
+  try {
+    const a = await Activity.findById(id);
+    if (!a) return res.status(404).json({ ok: false, message: "Activity not found" });
 
-  const key = `${userId}:${id}`;
-  const before = !!store.likesByUser.get(key);
+    const existingLike = await ActivityLike.findOne({ activity: id, user: userId });
 
-  if (before) {
-    store.likesByUser.delete(key);
-    a.stats.likes = Math.max(0, (a.stats.likes || 0) - 1);
-  } else {
-    store.likesByUser.set(key, true);
-    a.stats.likes = (a.stats.likes || 0) + 1;
+    if (existingLike) {
+      await ActivityLike.findByIdAndDelete(existingLike._id);
+      a.stats.likes = Math.max(0, (a.stats.likes || 0) - 1);
+      await a.save();
+      return res.json({ ok: true, liked: false, stats: { likes: a.stats.likes } });
+    } else {
+      await ActivityLike.create({ activity: id, user: userId });
+      a.stats.likes = (a.stats.likes || 0) + 1;
+      await a.save();
+      return res.json({ ok: true, liked: true, stats: { likes: a.stats.likes } });
+    }
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ok: false, message: "Failed to toggle like"});
   }
-
-  return res.json({ ok: true, liked: !before, stats: { likes: a.stats.likes } });
 });
 
 /**
@@ -244,16 +280,53 @@ router.post("/:id/seen", requireAuth, async (req, res) => {
   const userId = userIdOf(req.user);
   const id = req.params.id;
 
-  const a = store.activities.find((x) => x.id === id);
-  if (!a) return res.status(404).json({ ok: false, message: "Activity not found" });
+  try {
+    const a = await Activity.findById(id);
+    if (!a) return res.status(404).json({ ok: false, message: "Activity not found" });
 
-  const key = `${userId}:${id}`;
-  if (!store.seenByUser.has(key)) {
-    store.seenByUser.add(key);
-    a.stats.views = (a.stats.views || 0) + 1;
+    const existingView = await ActivityView.findOne({ activity: id, user: userId });
+
+    if (!existingView) {
+      await ActivityView.create({ activity: id, user: userId });
+      a.stats.views = (a.stats.views || 0) + 1;
+      await a.save();
+    }
+
+    return res.json({ ok: true, stats: { views: a.stats.views } });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ok: false, message: "Failed to track view"});
+  }
+});
+
+/**
+ * ✅ DELETE /api/activities/:id
+ * Educator only (must own the activity)
+ */
+router.delete("/:id", requireAuth, async (req, res) => {
+  if (!assertEducator(req)) {
+    return res.status(403).json({ ok: false, message: "Only educator can delete" });
   }
 
-  return res.json({ ok: true, stats: { views: a.stats.views } });
+  const educatorId = userIdOf(req.user);
+  const id = req.params.id;
+
+  try {
+    const activity = await Activity.findById(id);
+    if (!activity) {
+      return res.status(404).json({ ok: false, message: "Activity not found" });
+    }
+
+    if (activity.educator.toString() !== educatorId) {
+      return res.status(403).json({ ok: false, message: "Unauthorized to delete this activity" });
+    }
+
+    await Activity.findByIdAndDelete(id);
+    res.json({ ok: true, message: "Activity deleted successfully" });
+  } catch (err) {
+    console.error("Delete activity error:", err);
+    res.status(500).json({ ok: false, message: "Failed to delete activity" });
+  }
 });
 
 module.exports = router;

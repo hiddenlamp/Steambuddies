@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
 
     /* ===================== EDUCATOR ===================== */
     educatorId: { type: String, trim: true, default: undefined },
+    assignedSchools: [{ type: String, trim: true }],
 
     /* ===================== AUTH ===================== */
     passwordHash: { type: String, required: true, select: false },

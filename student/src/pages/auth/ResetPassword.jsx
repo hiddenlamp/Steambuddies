@@ -69,7 +69,7 @@ export default function ResetPassword() {
         >
           <div className="flex flex-col items-center text-center mb-5 shrink-0">
             <div className="w-16 h-16 rounded-2xl bg-black/60 flex items-center justify-center mb-3 border border-white/20">
-              <img src={logo} alt="Hidden Lamp" className="w-12 h-12 object-contain" />
+              <img src={logo} alt="Steam Buddies" className="w-12 h-12 object-contain" />
             </div>
 
             <h1 className="text-xl md:text-2xl font-extrabold">

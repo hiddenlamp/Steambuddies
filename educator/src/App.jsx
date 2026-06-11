@@ -6,7 +6,6 @@ import { ThemeContext } from "./context/ThemeContext";
 
 // Auth pages
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
 import OurPeoples from "./pages/OurPeoples";
 
 // Educator layout/pages
@@ -17,10 +16,6 @@ import EducatorDashboard from "./pages/Dashboard";
 import EducatorCourses from "./pages/courses/EducatorCourses";
 import NewCourse from "./pages/courses/NewCourse";
 import EditCourse from "./pages/courses/CourseEdit";
-
-// Activities (Educator)
-import EducatorActivities from "./pages/activities/EducatorActivities";
-import EducatorActivityNew from "./pages/activities/EducatorActivityNew";
 
 // Notes (Educator)
 import EducatorNotes from "./pages/notes/EducatorNotes";
@@ -43,6 +38,16 @@ import MockTestManage from "./pages/mocktests/MockTestManage";
 
 // Reports (Educator)
 import SubmitReport from "./pages/SubmitReport";
+
+// Challenges & Reels (Educator)
+import ManageChallenges from "./pages/challenges/ManageChallenges";
+import ManageReels from "./pages/reels/ManageReels";
+
+// Doubts (Educator)
+import EducatorDoubts from "./pages/doubts/EducatorDoubts";
+
+// Profile
+import Profile from "./pages/Profile";
 
 import "./styles/globals.css";
 
@@ -75,7 +80,6 @@ export default function App() {
 
             {/* Auth */}
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
             <Route path="/our-peoples" element={<OurPeoples />} />
 
             {/* Educator Panel */}
@@ -93,10 +97,6 @@ export default function App() {
               <Route path="courses" element={<EducatorCourses />} />
               <Route path="courses/new" element={<NewCourse />} />
               <Route path="courses/:id/edit" element={<EditCourse />} />
-
-              {/* Activities */}
-              <Route path="activities" element={<EducatorActivities />} />
-              <Route path="activities/new" element={<EducatorActivityNew />} />
 
               {/* Notes */}
               <Route path="notes/new" element={<EducatorNotes />} />
@@ -119,6 +119,17 @@ export default function App() {
 
               {/* Reports */}
               <Route path="reports/new" element={<SubmitReport />} />
+
+              {/* Challenges */}
+              <Route path="challenges" element={<ManageChallenges />} />
+
+              {/* Reels */}
+              <Route path="reels" element={<ManageReels />} />
+
+              {/* Profile */}
+              <Route path="videos/manage" element={<ManageReels />} />
+              <Route path="doubts" element={<EducatorDoubts />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             {/* 404 */}

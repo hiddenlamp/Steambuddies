@@ -11,7 +11,7 @@ const router = express.Router();
  * Fetch notifications for the logged-in student.
  * Retrieves global notifications and direct notifications, ordered by newest.
  */
-router.get("/", requireAuth, requireRole("student"), async (req, res) => {
+router.get("/", requireAuth, requireRole("student", "educator", "admin"), async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -49,7 +49,7 @@ router.get("/", requireAuth, requireRole("student"), async (req, res) => {
  * POST /api/notifications/:id/read
  * Mark a specific notification as read.
  */
-router.post("/:id/read", requireAuth, requireRole("student"), async (req, res) => {
+router.post("/:id/read", requireAuth, requireRole("student", "educator", "admin"), async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -89,7 +89,7 @@ router.post("/:id/read", requireAuth, requireRole("student"), async (req, res) =
  * POST /api/notifications/read-all
  * Mark all unread notifications as read.
  */
-router.post("/read-all", requireAuth, requireRole("student"), async (req, res) => {
+router.post("/read-all", requireAuth, requireRole("student", "educator", "admin"), async (req, res) => {
   try {
     const userId = req.user.id;
 

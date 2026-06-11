@@ -14,6 +14,10 @@ router.use(requireAuth, requireRole("educator", "admin"));
 // ✅ Debug ping (protected)
 router.get("/ping", (req, res) => res.json({ ok: true, role: req?.user?.role || "unknown" }));
 
+// ✅ Stats (Dashboard)
+const { getStats } = require("../controllers/educator/stats.controller.js");
+router.get("/stats", getStats);
+
 /**
  * ✅ Mount subroutes
  * NOTE: file ke andar jo paths hain, woh relative honge.

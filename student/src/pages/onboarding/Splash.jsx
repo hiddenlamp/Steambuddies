@@ -150,7 +150,7 @@ export default function Splash() {
         transition={{ delay: 1 }}
         className="absolute bottom-8 text-[11px] uppercase tracking-[0.25em] text-gray-500"
       >
-        Powered by Hidden Lamp • Learn • Create • Rise 🚀
+        Powered by Steam Buddies • Learn • Create • Rise 🚀
       </motion.p>
     </div>
   );
