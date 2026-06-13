@@ -51,8 +51,8 @@ export default function AuthLayout({ children, isPasswordFocused, inputLength })
               <h2 className="text-2xl font-bold text-white/90 mb-2 drop-shadow-md">
                 It's dark here!
               </h2>
-              <p className="text-sm text-gray-400 max-w-xs">
-                Pull the lamp cord to turn on the light and reveal the login form.
+              <p className="text-sm text-gray-400 max-w-xs cursor-pointer" onClick={() => setIsLightOn(true)}>
+                Tap or pull the lamp cord to turn on the light and reveal the login form.
               </p>
               <motion.div 
                  animate={{ y: [0, 8, 0] }} 
@@ -152,8 +152,8 @@ export default function AuthLayout({ children, isPasswordFocused, inputLength })
               <h2 className="text-2xl md:text-3xl font-bold text-white/90 mb-2 drop-shadow-md">
                 It's dark here!
               </h2>
-              <p className="text-sm md:text-base text-gray-400 max-w-xs md:max-w-sm">
-                Pull the lamp cord to turn on the light and reveal the login form.
+              <p className="text-sm md:text-base text-gray-400 max-w-xs md:max-w-sm cursor-pointer" onClick={() => setIsLightOn(true)}>
+                Tap or pull the lamp cord to turn on the light and reveal the login form.
               </p>
             </motion.div>
           )}

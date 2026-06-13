@@ -97,7 +97,10 @@ export default function CuteLamp({ isOff, inputLength, toggleLight }) {
               toggleLight();
             }
           }}
-          style={{ y: pullY, cursor: "grab" }}
+          onClick={() => {
+            if (toggleLight) toggleLight();
+          }}
+          style={{ y: pullY, cursor: "grab", touchAction: "none" }}
           whileTap={{ cursor: "grabbing" }}
         >
           {/* Visible knob */}
