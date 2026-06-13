@@ -152,3 +152,27 @@ exports.markResolved = async (req, res) => {
     res.status(500).json({ ok: false, message: "Server error" });
   }
 };
+
+exports.markSeen = async (req, res) => {
+  try {
+    const doubt = await Doubt.findById(req.params.id).populate("studentId", "fullName email school classLevel");
+    if (!doubt) return res.status(404).json({ ok: false, message: "Doubt not found" });
+
+    let updated = false;
+    doubt.messages.forEach(msg => {
+      if (msg.senderId.toString() !== req.user._id.toString() && !msg.seen) {
+        msg.seen = true;
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      await doubt.save();
+    }
+
+    res.json({ ok: true, doubt });
+  } catch (error) {
+    console.error("Error marking seen:", error);
+    res.status(500).json({ ok: false, message: "Server error" });
+  }
+};

@@ -5,6 +5,7 @@ const MessageSchema = new mongoose.Schema({
   senderModel: { type: String, required: true, enum: ["User"] }, // User holds both student and educator
   senderName: { type: String, required: true },
   text: { type: String, required: true },
+  seen: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 

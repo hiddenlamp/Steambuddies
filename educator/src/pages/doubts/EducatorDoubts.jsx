@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { MessageCircle, CheckCircle2, User, Send, Bot } from "lucide-react";
+import { MessageCircle, CheckCircle2, User, Send, Bot, Check, CheckCheck } from "lucide-react";
 import { API_BASE_URL } from "../../utils/data";
 import { motion, AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
@@ -30,15 +30,36 @@ export default function EducatorDoubts() {
   useEffect(() => {
     fetchDoubts();
     
+    // Polling as a fallback for real-time updates and marking seen
+    let interval;
+    if (activeDoubtId) {
+      interval = setInterval(() => {
+        fetch(`${API_BASE_URL}/doubts/${activeDoubtId}/seen`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            setDoubts(prev => prev.map(d => d._id === data.doubt._id ? data.doubt : d));
+          }
+        })
+        .catch(console.error);
+      }, 5000);
+    } else {
+      interval = setInterval(fetchDoubts, 10000);
+    }
+
     const socket = io(API_BASE_URL.replace("/api", ""));
     socket.on("new_notification", () => {
       fetchDoubts();
     });
 
     return () => {
+      clearInterval(interval);
       socket.disconnect();
     };
-  }, [token]);
+  }, [activeDoubtId, token]);
 
   const activeDoubt = doubts.find(d => d._id === activeDoubtId);
 
@@ -156,7 +177,12 @@ export default function EducatorDoubts() {
                       <div className={`p-4 rounded-2xl ${isMe ? "bg-sky-600 rounded-br-sm text-white" : "bg-white/10 rounded-bl-sm text-white border border-white/5"}`}>
                         <div className="text-[10px] font-bold mb-1 opacity-70">{msg.senderName}</div>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                        <div className="text-[9px] mt-2 opacity-50 text-right">{new Date(msg.createdAt).toLocaleTimeString()}</div>
+                        <div className="flex items-center justify-end gap-1 mt-2">
+                          <div className="text-[9px] opacity-50">{new Date(msg.createdAt).toLocaleTimeString()}</div>
+                          {isMe && (
+                            msg.seen ? <CheckCheck size={12} className="text-sky-300" /> : <Check size={12} className="opacity-50" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

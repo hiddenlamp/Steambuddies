@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, User, Bot, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Send, User, Bot, CheckCircle2, Check, CheckCheck } from "lucide-react";
 import { API_BASE_URL } from "../../utils/data";
 import { io } from "socket.io-client";
 
@@ -34,12 +34,29 @@ export default function DoubtChat() {
   useEffect(() => {
     fetchDoubt();
     
+    // Polling as a fallback for real-time updates and marking seen
+    let interval;
+    if (id) {
+      interval = setInterval(() => {
+        fetch(`${API_BASE_URL}/doubts/${id}/seen`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) setDoubt(data.doubt);
+        })
+        .catch(console.error);
+      }, 5000);
+    }
+
     const socket = io(API_BASE_URL.replace("/api", ""));
     socket.on("new_notification", () => {
       fetchDoubt();
     });
 
     return () => {
+      clearInterval(interval);
       socket.disconnect();
     };
   }, [id, token]);
@@ -125,7 +142,12 @@ export default function DoubtChat() {
                   <div className={`p-3 sm:p-4 rounded-2xl ${isMe ? "bg-blue-600 rounded-br-sm text-white" : "bg-white/10 rounded-bl-sm text-white border border-white/5"}`}>
                     <div className="text-[10px] font-bold mb-1 opacity-70">{msg.senderName}</div>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                    <div className="text-[9px] mt-2 opacity-50 text-right">{new Date(msg.createdAt).toLocaleTimeString()}</div>
+                    <div className="flex items-center justify-end gap-1 mt-2">
+                      <div className="text-[9px] opacity-50">{new Date(msg.createdAt).toLocaleTimeString()}</div>
+                      {isMe && (
+                        msg.seen ? <CheckCheck size={12} className="text-sky-300" /> : <Check size={12} className="opacity-50" />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
