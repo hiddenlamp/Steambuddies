@@ -41,7 +41,10 @@ export default function CuteLamp({ isOff, inputLength, toggleLight }) {
   const cordPath = useTransform(totalY, y => `M 125 220 L 100 ${y}`);
 
   return (
-    <div className="relative w-full h-[260px] sm:h-[300px] md:h-[450px] flex justify-center items-end overflow-visible select-none scale-[0.65] sm:scale-90 md:scale-100 origin-bottom">
+    <div 
+      className="relative w-full h-[260px] sm:h-[300px] md:h-[450px] flex justify-center items-end overflow-visible select-none scale-[0.65] sm:scale-90 md:scale-100 origin-bottom"
+      style={{ touchAction: "none", overscrollBehavior: "none" }}
+    >
       
       <svg width="350" height="450" viewBox="0 0 350 450" className="relative z-10 overflow-visible pointer-events-none">
         <defs>

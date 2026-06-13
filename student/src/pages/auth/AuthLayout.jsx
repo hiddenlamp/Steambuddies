@@ -10,7 +10,10 @@ export default function AuthLayout({ children, isPasswordFocused, inputLength })
   const isOff = !isLightOn || isPasswordFocused;
 
   return (
-    <div className="relative min-h-[100dvh] w-full bg-[#0a0f18] text-white overflow-x-hidden flex flex-col md:flex-row">
+    <div 
+       className="relative min-h-[100dvh] w-full bg-[#0a0f18] text-white overflow-x-hidden flex flex-col md:flex-row"
+       style={{ overscrollBehaviorY: "none" }}
+    >
       {/* Background Dimming when Lamp is Off */}
       <AnimatePresence>
         {isOff && (
