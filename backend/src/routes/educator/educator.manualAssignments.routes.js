@@ -14,11 +14,36 @@ const ManualAssignment = require("../../models/ManualAssignment");
  * ========================= */
 router.get("/manual-assignments", requireAuth, requireRole("educator", "admin"), async (req, res) => {
   try {
-    const { schoolId, classLevel, status } = req.query;
+    const { schoolId, classLevel, status, targetSchools, targetClasses } = req.query;
 
     const filter = {};
     if (schoolId) filter.schoolId = schoolId;
     if (classLevel) filter.classLevel = String(classLevel);
+    
+    // Support bulk filtering
+    if (targetSchools) {
+      try {
+        const schoolsArr = JSON.parse(targetSchools);
+        if (schoolsArr.length > 0) {
+          const matchedSchools = await School.find({ name: { $in: schoolsArr } }, "_id").lean();
+          filter.schoolId = { $in: matchedSchools.map(s => s._id) };
+        }
+      } catch (e) {
+        console.error("Failed to parse targetSchools:", e);
+      }
+    }
+    
+    if (targetClasses) {
+      try {
+        const classesArr = JSON.parse(targetClasses);
+        if (classesArr.length > 0) {
+          const numericClasses = classesArr.map(c => String(c).replace(/\D/g, ""));
+          filter.classLevel = { $in: numericClasses };
+        }
+      } catch (e) {
+        console.error("Failed to parse targetClasses:", e);
+      }
+    }
     if (status) filter.status = status;
 
     const items = await ManualAssignment.find(filter)
@@ -50,23 +75,39 @@ router.get("/manual-assignments", requireAuth, requireRole("educator", "admin"),
  * ========================= */
 router.post("/manual-assignments", requireAuth, requireRole("educator", "admin"), async (req, res) => {
   try {
-    const { manualId, schoolId, classLevel, status = "active" } = req.body || {};
+    const {
+      targetSchools,
+      targetClasses,
+      manualId,
+      expectedWeeks = 8,
+      status = "pending",
+      progressPct = 0,
+    } = req.body || {};
 
     console.log("POST /api/educator/manual-assignments body =", req.body);
     console.log("POST /api/educator/manual-assignments user =", req.user);
 
-    if (!manualId || !schoolId || !classLevel) {
+    let schoolsArray = [];
+    let classesArray = [];
+
+    if (Array.isArray(targetSchools)) schoolsArray = targetSchools;
+    else if (typeof targetSchools === "string") schoolsArray = JSON.parse(targetSchools || "[]");
+
+    if (Array.isArray(targetClasses)) classesArray = targetClasses;
+    else if (typeof targetClasses === "string") classesArray = JSON.parse(targetClasses || "[]");
+
+    if (!schoolsArray.length || !classesArray.length || !manualId) {
       return res.status(400).json({
         ok: false,
-        message: "manualId, schoolId and classLevel are required",
+        message: "targetSchools, targetClasses and manualId are required",
       });
     }
 
-    const school = await School.findById(schoolId).lean();
-    if (!school) {
+    const schools = await School.find({ name: { $in: schoolsArray } }).lean();
+    if (!schools.length) {
       return res.status(404).json({
         ok: false,
-        message: "School not found",
+        message: "Schools not found",
       });
     }
 
@@ -78,40 +119,45 @@ router.post("/manual-assignments", requireAuth, requireRole("educator", "admin")
       });
     }
 
-    const existing = await ManualAssignment.findOne({
-      manualId,
-      schoolId,
-      classLevel: String(classLevel),
-    }).lean();
+    const createdAssignments = [];
+    const skippedClasses = [];
 
-    if (existing) {
-      return res.status(409).json({
-        ok: false,
-        message: "This manual is already assigned to this school/class",
-      });
+    for (const school of schools) {
+      for (const classItem of classesArray) {
+        const numericClass = String(classItem).replace(/\D/g, "");
+
+        // duplicate check
+        const existing = await ManualAssignment.findOne({
+          schoolId: school._id,
+          classLevel: numericClass,
+          manualId,
+        }).lean();
+
+        if (existing) {
+          skippedClasses.push(`${school.name} - Class ${numericClass}`);
+          continue;
+        }
+
+        const created = await ManualAssignment.create({
+          schoolId: school._id,
+          classLevel: numericClass,
+          manualId,
+          expectedWeeks: Number(expectedWeeks) || 8,
+          status,
+          progressPct: Number(progressPct) || 0,
+          createdBy: req.user?._id || req.user?.id || null,
+        });
+        
+        createdAssignments.push(created);
+      }
     }
-
-    const created = await ManualAssignment.create({
-      manualId,
-      schoolId,
-      classLevel: String(classLevel),
-      status,
-      assignedBy: req.user?._id || req.user?.id || null,
-    });
-
-    const item = await ManualAssignment.findById(created._id)
-      .populate("manualId")
-      .populate("schoolId", "_id name city state")
-      .lean();
 
     return res.status(201).json({
       ok: true,
-      item: {
-        ...item,
-        manual: item.manualId || null,
-        school: item.schoolId || null,
-      },
-      message: "Manual assigned successfully",
+      createdCount: createdAssignments.length,
+      skippedClasses,
+      message: `Manual assigned to ${createdAssignments.length} combinations successfully.` + 
+               (skippedClasses.length > 0 ? ` Skipped ${skippedClasses.length} duplicates.` : ""),
     });
   } catch (err) {
     console.error("POST /api/educator/manual-assignments failed:", err);

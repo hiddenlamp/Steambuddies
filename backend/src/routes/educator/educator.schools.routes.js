@@ -11,8 +11,22 @@ router.get("/schools", requireAuth, requireRole("educator"), async (req, res) =>
     console.log("✅ /api/educator/schools route HIT");
     console.log("req.user =", req.user);
 
+    const assigned = req.user.assignedSchools || [];
+    
+    // Only fetch schools that are assigned to this educator
+    // The assigned array could contain school names or ObjectIds
+    const objectIds = assigned.filter(id => typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/));
+    
     const query = {
-      $or: [{ isActive: true }, { isActive: { $exists: false } }],
+      $and: [
+        { $or: [{ isActive: true }, { isActive: { $exists: false } }] },
+        {
+          $or: [
+            { name: { $in: assigned } },
+            ...(objectIds.length > 0 ? [{ _id: { $in: objectIds } }] : [])
+          ]
+        }
+      ]
     };
 
     const schools = await School.find(query)

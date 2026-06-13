@@ -26,6 +26,9 @@ const ActivitySchema = new mongoose.Schema(
       views: { type: Number, default: 0 },
       likes: { type: Number, default: 0 },
     },
+
+    targetSchools: [{ type: String, trim: true }], // If empty, visible to all
+    targetClasses: [{ type: String, trim: true }], // If empty, visible to all
   },
   { timestamps: true }
 );

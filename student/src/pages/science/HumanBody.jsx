@@ -268,6 +268,7 @@ export default function HumanBody() {
       metric: "86B Neurons",
       colorTheme: "pink",
       textureUrl: "/assets/organs/organ_brain_1780044762656.png",
+      sketchfabId: "cc8bb05a76e94af084e3a47dafb03f8a", // Example brain
       desc: "The hyper-complex neural processor of the human machine. It synthesizes data, controls motor functions, and generates consciousness through vast electrochemical networks.",
       stats: { "Synapses": "100 Trillion", "Energy Use": "20 Watts", "Signal Speed": "120 m/s" }
     },
@@ -281,6 +282,7 @@ export default function HumanBody() {
       metric: "100K Beats/day",
       colorTheme: "red",
       textureUrl: "/assets/organs/organ_heart_1780044783173.png",
+      sketchfabId: "775d6629622740de8a5ed61a959c7506", // From user screenshot
       desc: "The primary biological engine maintaining systemic pressure and delivering oxygen-rich fluid to all biological subsystems without pause for the duration of the organism's lifespan.",
       stats: { "Output": "7,200 L/day", "Pressure": "120/80 mmHg", "Valves": "4 Chambers" }
     },
@@ -294,6 +296,7 @@ export default function HumanBody() {
       metric: "20K Breaths/day",
       colorTheme: "cyan",
       textureUrl: "/assets/organs/organ_lungs_1780044799792.png",
+      sketchfabId: "a1a8c3e8cd864388836ec3bfa09930cb", // Example lungs
       desc: "A highly porous dual-chamber gas exchange manifold. It extracts atmospheric oxygen while simultaneously venting toxic carbon dioxide accumulated from cellular combustion.",
       stats: { "Surface Area": "70 sq meters", "Capacity": "6 Liters", "Alveoli": "480 Million" }
     },
@@ -307,6 +310,7 @@ export default function HumanBody() {
       metric: "500+ Functions",
       colorTheme: "amber",
       textureUrl: "/assets/organs/organ_liver_1780044814941.png",
+      sketchfabId: "5e243dbfdd5c4ec4807469b82875ab94", // Example liver
       desc: "The body's primary biochemical laboratory and filtration plant. It neutralizes toxins, synthesizes vital proteins, and manages nutrient distribution protocols.",
       stats: { "Regeneration": "High", "Bile Prod": "1 L/day", "Storage": "Glycogen & Iron" }
     },
@@ -320,6 +324,7 @@ export default function HumanBody() {
       metric: "200L Filtered/day",
       colorTheme: "yellow",
       textureUrl: "/assets/organs/organ_kidneys_1780044836641.png",
+      sketchfabId: "bbdfef5a2e9b41a7b451df6c94d0e6ba", // Example kidneys
       desc: "A dual-unit osmotic filtration system. It maintains blood homeostasis by extracting toxic urea and regulating the body's electrolyte balance.",
       stats: { "Nephrons": "2 Million", "Urine Prod": "1.5 L/day", "Control": "Blood Pressure" }
     },
@@ -333,6 +338,7 @@ export default function HumanBody() {
       metric: "10M Colors",
       colorTheme: "blue",
       textureUrl: "/assets/organs/organ_eyes_1780044852435.png",
+      sketchfabId: "d634db89dc424e83a743c3a07b713b1a", // Example eye
       desc: "High-resolution binaural optical sensors that capture photons, process stereoscopic depth, and stream exabytes of visual data to the neural cortex.",
       stats: { "Rods/Cones": "120M / 6M", "Resolution": "576 Megapixels", "Update": "1000 Hz" }
     },
@@ -346,6 +352,7 @@ export default function HumanBody() {
       metric: "1 Trillion Scents",
       colorTheme: "purple",
       textureUrl: "/assets/organs/organ_nose_1780044868493.png",
+      sketchfabId: "a2b00cd09f1947b198889ec189914cc7", // Example nose/anatomy
       desc: "A sophisticated chemical analysis chamber that detects airborne molecular structures, linking directly to the brain's memory and emotion centers.",
       stats: { "Receptors": "400 Types", "Neurons": "6 Million", "Airflow": "10,000 L/day" }
     }
@@ -402,7 +409,27 @@ export default function HumanBody() {
                 <div className={`absolute inset-0 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-${organ.colorTheme}-500/50 to-transparent`} style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'exclude' }}></div>
                 <div className="w-full md:w-[45%] h-64 md:h-80 relative bg-black/40 rounded-[1.8rem] overflow-hidden flex items-center justify-center border border-white/5">
                    
-                   <ThreeOrganOrb organ={organ} />
+                   {organ.sketchfabId ? (
+                      <div className="w-full h-full relative z-10 pointer-events-auto">
+                        <iframe 
+                           title={organ.name}
+                           frameBorder="0" 
+                           allowFullScreen 
+                           mozallowfullscreen="true" 
+                           webkitallowfullscreen="true" 
+                           allow="autoplay; fullscreen; xr-spatial-tracking" 
+                           xr-spatial-tracking="true" 
+                           execution-while-out-of-viewport="true" 
+                           execution-while-not-rendered="true" 
+                           web-share="true" 
+                           src={`https://sketchfab.com/models/${organ.sketchfabId}/embed?autostart=1&ui_theme=dark&transparent=1&ui_infos=0&ui_watermark=0&ui_controls=0`}
+                           className="w-full h-full pointer-events-none scale-125"
+                        ></iframe>
+                        <div className="absolute inset-0 z-20 cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedOrgan(organ); }}></div>
+                      </div>
+                   ) : (
+                      <ThreeOrganOrb organ={organ} />
+                   )}
                    
                    <div className={`absolute inset-0 bg-${organ.colorTheme}-500/10 blur-[50px] pointer-events-none`}></div>
                    <div className="absolute top-4 left-4 text-[9px] font-mono text-white/50 uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-black/50 backdrop-blur-sm z-20 pointer-events-none">ID: {organ.id.toUpperCase()}</div>
@@ -438,9 +465,25 @@ export default function HumanBody() {
                           <button onClick={(e) => { e.stopPropagation(); setArActive(true); }} className={cn("px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase cursor-pointer", arActive ? "bg-cyan-500 text-black font-bold" : "bg-white/5 text-slate-400")}>AR Projection</button>
                         </div>
                         {!arActive ? (
-                          <div className="w-full h-full relative z-[110]">
-                               {/* Modal uses standalone renderer to not conflict with global engine that is paused */}
-                               <StandaloneModalOrb organ={selectedOrgan} />
+                          <div className="w-full h-full relative z-[110] bg-black/50 rounded-3xl overflow-hidden border border-cyan-500/30">
+                              {selectedOrgan.sketchfabId ? (
+                                <iframe 
+                                  title={selectedOrgan.name}
+                                  frameBorder="0" 
+                                  allowFullScreen 
+                                  mozallowfullscreen="true" 
+                                  webkitallowfullscreen="true" 
+                                  allow="autoplay; fullscreen; xr-spatial-tracking" 
+                                  xr-spatial-tracking="true" 
+                                  execution-while-out-of-viewport="true" 
+                                  execution-while-not-rendered="true" 
+                                  web-share="true" 
+                                  src={`https://sketchfab.com/models/${selectedOrgan.sketchfabId}/embed?autostart=1&ui_theme=dark&transparent=1`}
+                                  className="w-full h-full"
+                                ></iframe>
+                              ) : (
+                                <StandaloneModalOrb organ={selectedOrgan} />
+                              )}
                           </div>
                         ) : (
                           <div className="w-full h-80 md:h-full relative flex items-center justify-center rounded-3xl overflow-hidden border border-cyan-500/20 bg-cyan-950/10 z-[110]">

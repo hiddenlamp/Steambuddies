@@ -1,759 +1,680 @@
-// ✅ UPDATED: src/pages/syllabus/Syllabus.jsx
-// Fixes:
-// 1) Cards are now FULL COLOR (no white card base)
-// 2) Each card has its OWN "Download" button (exports that single track PDF)
-// 3) "Syllabus" heading is now ALWAYS visible in light mode (gradient + fallback + stroke)
-
-import React, { useMemo, useRef, useState, useCallback } from "react";
+// ✅ src/pages/syllabus/Syllabus.jsx (ULTRA PREMIUM OVERHAUL)
+import React, { useContext, useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Sparkles,
-  Download,
-  Search,
-  SlidersHorizontal,
-  Boxes,
-  Cpu,
-  Layers,
-  Bot,
-  Wifi,
-  AppWindow,
-  Code2,
-  TerminalSquare,
-  CheckCircle2,
-  FileText,
-  X,
-  ArrowUpRight,
+  ChevronRight, Search, Sparkles, FileText, Pin, Clock, Tag,
+  Download, Filter, ArrowLeft, RefreshCcw, X, SlidersHorizontal, Layers, GraduationCap
 } from "lucide-react";
-import jsPDF from "jspdf";
+
+import { ThemeContext } from "../../context/ThemeContext";
+import { LanguageContext } from "../../context/LanguageContext";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
+const spring = { type: "spring", stiffness: 300, damping: 24 };
 
-/* ------------------------- tiny 3D tilt hook ------------------------- */
-function useTilt(max = 10) {
-  const ref = useRef(null);
-  const [style, setStyle] = useState({});
-  const onMove = (e) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
-    const rx = (max / 2 - py * max).toFixed(2);
-    const ry = (px * max - max / 2).toFixed(2);
-    setStyle({
-      transform: `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(0)`,
-    });
-  };
-  const onLeave = () =>
-    setStyle({
-      transform: "perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0)",
-    });
-  return { ref, style, onMove, onLeave };
+const pageWrap = "min-h-screen pt-6 pb-28 transition-colors duration-500 overflow-x-hidden relative";
+const container = "relative z-10 mx-auto w-full max-w-[1400px] px-4 sm:px-6 md:px-10 lg:px-12 xl:px-14 2xl:pl-32 2xl:pr-24";
+
+/** ✅ Safe text getter */
+function pickText(value, language = "en") {
+  if (value == null) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (Array.isArray(value)) return value.map((x) => pickText(x, language)).filter(Boolean).join(", ");
+  if (typeof value === "object") return value?.[language] || value?.en || value?.hi || "";
+  return String(value);
 }
 
-/* ----------------------------- PDF EXPORT ---------------------------- */
-function exportSyllabusPDF({ title, subtitle, tracks, filename = "Syllabus_Project_First.pdf" }) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const margin = 44;
-
-  const wrap = (text, maxW) => doc.splitTextToSize(text, maxW);
-
-  let y = 64;
-
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.text(title, margin, y);
-
-  y += 18;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.text(wrap(subtitle, pageW - margin * 2), margin, y);
-
-  y += 18;
-  doc.setDrawColor(30);
-  doc.setLineWidth(1);
-  doc.line(margin, y, pageW - margin, y);
-  y += 18;
-
-  tracks.forEach((t, idx) => {
-    const head = `${idx + 1}. ${t.title}  (${t.level})`;
-    const tagline = t.tagline;
-    const tools = `Tools: ${t.tools}`;
-    const projects = t.projects.map((p) => `• ${p}`).join("\n");
-
-    const approxLines =
-      wrap(head, pageW - margin * 2).length +
-      wrap(tagline, pageW - margin * 2).length +
-      wrap(tools, pageW - margin * 2).length +
-      wrap(projects, pageW - margin * 2).length;
-
-    const approxHeight = approxLines * 14 + 56;
-
-    if (y + approxHeight > pageH - margin) {
-      doc.addPage();
-      y = margin;
-    }
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text(wrap(head, pageW - margin * 2), margin, y);
-    y += 18;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.text(wrap(tagline, pageW - margin * 2), margin, y);
-    y += 16;
-
-    doc.text(wrap(tools, pageW - margin * 2), margin, y);
-    y += 16;
-
-    doc.text(wrap(projects, pageW - margin * 2), margin, y);
-    y += 18;
-
-    doc.setDrawColor(220);
-    doc.line(margin, y, pageW - margin, y);
-    y += 14;
-  });
-
-  doc.setFontSize(10);
-  doc.setTextColor(120);
-  doc.text("Generated from Syllabus page", margin, pageH - 18);
-
-  doc.save(filename);
+function fmtAgo(ts) {
+  if (!ts) return "—";
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
 }
 
-/* ---------------------------- UI components -------------------------- */
-function GradientChip({ icon: Icon, children }) {
+/** Animated Background */
+function AnimatedBackground({ isDark }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full px-3 py-1",
-        "text-[10px] font-black tracking-[0.18em] text-white",
-        "bg-gradient-to-r from-sky-600 via-indigo-600 to-fuchsia-700",
-        "shadow-[0_14px_40px_rgba(79,70,229,0.30)]"
-      )}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      {children}
-    </span>
-  );
-}
-
-function SoftChip({ icon: Icon, children }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full px-3 py-1",
-        "text-[10px] font-black tracking-[0.18em]",
-        "border border-black/10 bg-white/70 text-slate-900 backdrop-blur",
-        "dark:border-white/10 dark:bg-white/10 dark:text-white/90"
-      )}
-    >
-      <Icon className="h-3.5 w-3.5 opacity-90" />
-      {children}
-    </span>
-  );
-}
-
-function FilterPill({ active, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-3 py-2 text-[11px] font-extrabold tracking-wide transition",
-        "border backdrop-blur",
-        active
-          ? "border-white/10 text-white bg-gradient-to-r from-sky-600 via-indigo-600 to-fuchsia-700 shadow-[0_14px_40px_rgba(79,70,229,0.30)]"
-          : "border-black/10 bg-white/70 text-slate-900 hover:bg-white/90 dark:border-white/10 dark:bg-white/10 dark:text-white/85 dark:hover:bg-white/15"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function TrackModal({ open, onClose, track }) {
-  const reduce = useReducedMotion();
-  if (!open || !track) return null;
-
-  return (
-    <AnimatePresence>
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+      <div className={cn("absolute inset-0 transition-colors duration-500", isDark ? "bg-[#030712]" : "bg-[#f8fafc]")} />
       <motion.div
-        className="fixed inset-0 z-[80] flex items-center justify-center px-3"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <button
-          aria-label="close"
-          onClick={onClose}
-          className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-        />
-
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 220, damping: 20 }}
-          className={cn(
-            "relative w-full max-w-2xl overflow-hidden rounded-[28px] border",
-            "border-black/10 bg-white shadow-[0_30px_120px_rgba(0,0,0,0.25)]",
-            "dark:border-white/10 dark:bg-[#0B1020] dark:shadow-[0_30px_120px_rgba(0,0,0,0.60)]"
-          )}
-        >
-          <div className={cn("absolute inset-0 opacity-95 bg-gradient-to-br", track.panel)} />
-          <div className="absolute inset-0 opacity-[0.18]">
-            <div
-              className="h-full w-full"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.55) 1px, transparent 0)",
-                backgroundSize: "18px 18px",
-              }}
-            />
-          </div>
-
-          <div className="relative p-5 md:p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/25 backdrop-blur">
-                  <track.icon className="h-6 w-6 text-white" />
-                </span>
-                <div>
-                  <div className="text-[16px] font-black text-white">{track.title}</div>
-                  <div className="text-[12px] text-white/85">{track.tagline}</div>
-                </div>
-              </div>
-
-              <button
-                onClick={onClose}
-                className="inline-flex items-center justify-center rounded-2xl p-2 ring-1 ring-white/25 bg-white/15 hover:bg-white/25 text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <SoftChip icon={Sparkles}>{track.level}</SoftChip>
-              <SoftChip icon={FileText}>Tools: {track.tools}</SoftChip>
-            </div>
-
-            <div className="mt-4 grid gap-2">
-              {track.projects.map((p, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 rounded-2xl bg-white/14 ring-1 ring-white/20 px-3 py-2"
-                >
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-white/90" />
-                  <div className="text-[12px] font-bold text-white">{p}</div>
-                </div>
-              ))}
-            </div>
-
-            {!reduce && (
-              <motion.div
-                aria-hidden
-                animate={{ y: [0, 10, 0], x: [0, -8, 0] }}
-                transition={{ duration: 7.2, repeat: Infinity, ease: "easeInOut" }}
-                className="pointer-events-none absolute -right-16 -bottom-16 h-64 w-64 rounded-full bg-white/18 blur-3xl"
-              />
-            )}
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        animate={{ x: [0, 60, 0], y: [0, -40, 0], rotate: [0, 10, 0] }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        className={cn("absolute -top-32 -left-24 h-[500px] w-[500px] rounded-full blur-[100px]", isDark ? "bg-sky-500/15" : "bg-sky-400/25")}
+      />
+      <motion.div
+        animate={{ x: [0, -50, 0], y: [0, 50, 0], rotate: [0, -10, 0] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        className={cn("absolute top-32 -right-28 h-[600px] w-[600px] rounded-full blur-[120px]", isDark ? "bg-fuchsia-500/15" : "bg-fuchsia-400/20")}
+      />
+      <motion.div
+        animate={{ x: [0, 40, 0], y: [0, -60, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        className={cn("absolute -bottom-20 left-1/3 h-[450px] w-[450px] rounded-full blur-[100px]", isDark ? "bg-emerald-500/15" : "bg-emerald-400/25")}
+      />
+      
+      {/* Noise Overlay */}
+      <div className={cn("absolute inset-0 pointer-events-none", isDark ? "opacity-[0.03]" : "opacity-[0.05]")} 
+           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+    </div>
   );
 }
 
-function TrackCard({ track, index, onOpen, onDownloadTrack }) {
+function Badge({ isDark, children }) {
+  return (
+    <motion.span
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={spring}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-wider border",
+        isDark
+          ? "bg-white/10 text-white/90 border-white/10 shadow-[0_0_25px_rgba(255,255,255,0.1)]"
+          : "bg-slate-900 text-white border-black/10 shadow-[0_10px_25px_rgba(2,6,23,0.18)]"
+      )}
+    >
+      <Sparkles className="h-3.5 w-3.5 text-fuchsia-400" />
+      {children}
+    </motion.span>
+  );
+}
+
+/** ✅ Ultra 3D Card with Mouse Spotlight */
+function SyllabusCard3D({ isDark, accent, children, idx = 0 }) {
   const reduce = useReducedMotion();
-  const tilt = useTilt(10);
+  const cardRef = useRef(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
 
   return (
-    <motion.button
-      type="button"
-      onClick={() => onOpen(track)}
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ type: "spring", stiffness: 180, damping: 18, delay: index * 0.03 }}
-      className="group relative text-left"
+    <motion.div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="group relative [perspective:1200px] h-full"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...spring, delay: idx * 0.05 }}
+      whileHover={reduce ? {} : { y: -8 }}
+      style={{ transformStyle: "preserve-3d" }}
     >
-      {/* glow */}
-      <div
+      {/* Base glow when hovered */}
+      <motion.div
         className={cn(
-          "pointer-events-none absolute -inset-1 rounded-[30px] opacity-80 blur-2xl",
-          "bg-gradient-to-r",
-          track.glow
+          "absolute -inset-1 rounded-[32px] blur-2xl transition-opacity duration-500",
+          isHovered ? "opacity-60" : "opacity-0",
+          isDark
+            ? "bg-gradient-to-br from-sky-500/40 via-fuchsia-500/30 to-emerald-500/30"
+            : "bg-gradient-to-br from-sky-400/50 via-fuchsia-400/40 to-emerald-400/40"
         )}
       />
 
-      <div
-        ref={tilt.ref}
-        onMouseMove={reduce ? undefined : tilt.onMove}
-        onMouseLeave={reduce ? undefined : tilt.onLeave}
-        style={reduce ? undefined : tilt.style}
+      <motion.div
         className={cn(
-          "relative overflow-hidden rounded-[30px] p-5 md:p-6 transition-transform duration-200",
-          // ✅ NO WHITE BASE anymore:
-          "ring-1 ring-black/10 bg-transparent shadow-[0_22px_70px_rgba(0,0,0,0.14)]",
-          "dark:ring-white/10 dark:shadow-[0_22px_70px_rgba(0,0,0,0.55)]"
+          "relative h-full rounded-[30px] p-[1.5px] overflow-hidden",
+          isDark
+            ? "bg-gradient-to-br from-white/15 to-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+            : "bg-gradient-to-br from-slate-200 to-white shadow-[0_20px_50px_rgba(2,6,23,0.08)]"
         )}
+        whileHover={reduce ? {} : { rotateX: 6, rotateY: -6 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
-        {/* full color panel */}
-        <div className={cn("absolute inset-0 opacity-95 bg-gradient-to-br", track.panel)} />
+        {/* Spotlight Effect overlay */}
+        <div 
+          className="pointer-events-none absolute -inset-px rounded-[30px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-20"
+          style={{
+            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'}, transparent 40%)`
+          }}
+        />
 
-        {/* pattern */}
-        <div className="absolute inset-0 opacity-[0.18]">
-          <div
-            className="h-full w-full"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.55) 1px, transparent 0)",
-              backgroundSize: "18px 18px",
-            }}
-          />
-        </div>
-
-        {/* readability fade */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/45 dark:to-black/60" />
-
-        {/* ✅ per-card download button */}
-        <div className="absolute right-4 top-4 z-20">
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.98 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDownloadTrack(track);
-            }}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-[11px] font-black",
-              "bg-white/18 text-white ring-1 ring-white/25 backdrop-blur",
-              "hover:bg-white/24"
-            )}
-          >
-            <Download className="h-4 w-4" />
-            Download
-          </motion.button>
-        </div>
-
-        {/* content */}
-        <div className="relative z-10 pt-10">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/18 ring-1 ring-white/25 backdrop-blur">
-                <track.icon className="h-6 w-6 text-white" />
-              </span>
-
-              <div className="min-w-0">
-                <div className="truncate text-[15px] font-black text-white">{track.title}</div>
-                <div className="mt-0.5 text-[12px] text-white/85">{track.tagline}</div>
-              </div>
-            </div>
-
-            <span className="shrink-0 rounded-full px-3 py-1 text-[10px] font-black tracking-[0.18em] bg-white/18 ring-1 ring-white/20 text-white">
-              {track.level}
-            </span>
-          </div>
-
-          <div className="mt-4 grid gap-2">
-            {track.projects.slice(0, 3).map((p, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-2 rounded-2xl bg-white/14 ring-1 ring-white/20 px-3 py-2"
-              >
-                <CheckCircle2 className="mt-0.5 h-4 w-4 text-white/90" />
-                <div className="text-[12px] font-bold text-white">{p}</div>
-              </div>
-            ))}
-            {track.projects.length > 3 && (
-              <div className="text-[11px] font-extrabold text-white/85 px-1 flex items-center gap-1">
-                + {track.projects.length - 3} more <ArrowUpRight className="h-4 w-4" />
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/18 ring-1 ring-white/20">
-              <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: "78%" }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.9, ease: "easeOut" }}
-                className={cn("h-full rounded-full bg-gradient-to-r", track.accent)}
-              />
-            </div>
-
-            <div className="mt-2 text-[11px] text-white/85">
-              Tools: <span className="font-semibold text-white">{track.tools}</span>
-            </div>
+        <div
+          className={cn(
+            "relative rounded-[28px] overflow-hidden border backdrop-blur-2xl h-full flex flex-col transition-colors",
+            isDark ? "bg-slate-900/60 border-white/10 group-hover:bg-slate-900/40" : "bg-white/80 border-white group-hover:bg-white/90"
+          )}
+        >
+          <div className={cn("h-2 w-full bg-gradient-to-r", accent)} />
+          <div className="relative px-6 pb-6 pt-5 flex-1 flex flex-col" style={{ transform: reduce ? "none" : "translateZ(30px)" }}>
+            {children}
           </div>
         </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
-        {/* hover shine */}
-        <div className="pointer-events-none absolute -top-16 left-1/3 h-56 w-56 rotate-12 rounded-full bg-white/25 blur-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      </div>
+function Chip({ isDark, active, icon, children, onClick }) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -2 }}
+      onClick={onClick}
+      className={cn(
+        "h-11 px-5 rounded-2xl text-[13px] font-bold inline-flex items-center gap-2 border transition-all duration-300",
+        active
+          ? isDark
+            ? "bg-gradient-to-r from-white/20 to-white/10 text-white border-white/30 ring-1 ring-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+            : "bg-slate-900 text-white border-slate-900 shadow-[0_10px_20px_rgba(2,6,23,0.2)]"
+          : isDark
+          ? "bg-white/5 text-white/70 border-white/10 hover:bg-white/15 hover:text-white"
+          : "bg-white/60 text-slate-700 border-black/5 hover:bg-white hover:text-slate-900 hover:shadow-md"
+      )}
+    >
+      {icon ? <span className={cn(active ? "text-current" : "text-slate-400", isDark && !active && "text-white/50")}>{icon}</span> : null}
+      {children}
     </motion.button>
   );
 }
 
-/* ------------------------------- PAGE -------------------------------- */
-export default function Syllabus() {
-  const navigate = useNavigate();
-  const reduce = useReducedMotion();
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState("all");
-  const [openTrack, setOpenTrack] = useState(null);
-
-  const TRACKS = useMemo(
-    () => [
-      {
-        id: "3d",
-        group: "core",
-        title: "3D Printing & Designing",
-        tagline: "Design → slice → print → present like a maker.",
-        level: "BEGINNER → PRO",
-        icon: Boxes,
-        tools: "Tinkercad / Fusion 360 • Cura",
-        accent: "from-slate-200 via-indigo-300 to-sky-300",
-        glow: "from-slate-500/25 via-indigo-500/25 to-sky-500/25",
-        panel: "from-slate-800 via-indigo-800 to-sky-800",
-        projects: ["Keychain & Nameplate", "Phone Stand", "Mini Gear Mechanism", "Prototype Product Model"],
-      },
-      {
-        id: "electronics",
-        group: "core",
-        title: "Electronics",
-        tagline: "Sensors, wiring, logic — build real circuits.",
-        level: "FOUNDATION",
-        icon: Cpu,
-        tools: "Breadboard • Sensors • Multimeter",
-        accent: "from-emerald-300 via-cyan-300 to-sky-300",
-        glow: "from-emerald-500/30 via-cyan-500/30 to-sky-500/30",
-        panel: "from-emerald-600 via-cyan-600 to-sky-700",
-        projects: ["Smart Night Lamp", "Buzzer Alarm", "Temperature Monitor", "Traffic Light System"],
-      },
-      {
-        id: "scratch",
-        group: "coding",
-        title: "Scratch Programming",
-        tagline: "Games, stories & logic — coding without fear.",
-        level: "KIDS + BEGINNER",
-        icon: Layers,
-        tools: "Scratch • Creativity • Logic",
-        accent: "from-amber-300 via-orange-300 to-rose-300",
-        glow: "from-amber-500/30 via-orange-500/30 to-rose-500/30",
-        panel: "from-amber-600 via-orange-600 to-rose-700",
-        projects: ["Maze Game", "Quiz App", "Animation Story", "Score & Levels Game"],
-      },
-      {
-        id: "robotics",
-        group: "core",
-        title: "Robotics",
-        tagline: "Build, code & control robots with confidence.",
-        level: "PROJECT-FIRST",
-        icon: Bot,
-        tools: "Arduino • Motors • Sensors",
-        accent: "from-violet-300 via-fuchsia-300 to-rose-300",
-        glow: "from-violet-500/30 via-fuchsia-500/30 to-rose-500/30",
-        panel: "from-violet-700 via-fuchsia-700 to-rose-700",
-        projects: ["Line Follower Robot", "Obstacle Avoider", "Bluetooth Car", "Mini Robotic Arm Basics"],
-      },
-      {
-        id: "iot",
-        group: "core",
-        title: "IoT (Internet of Things)",
-        tagline: "Connect devices to cloud and control them.",
-        level: "SMART SYSTEMS",
-        icon: Wifi,
-        tools: "ESP32/NodeMCU • Dashboard",
-        accent: "from-violet-300 via-fuchsia-300 to-rose-300",
-        glow: "from-violet-500/30 via-fuchsia-500/30 to-rose-500/30",
-        panel: "from-violet-700 via-fuchsia-700 to-rose-700",
-        projects: ["Smart Home Switch", "Live Sensor Dashboard", "IoT Weather Station", "Alert System (Gas/Water)"],
-      },
-      {
-        id: "appdev",
-        group: "coding",
-        title: "App Development",
-        tagline: "UI → navigation → storage → publish mindset.",
-        level: "MODERN APPS",
-        icon: AppWindow,
-        tools: "Flutter/React • Firebase",
-        accent: "from-indigo-300 via-sky-300 to-emerald-300",
-        glow: "from-indigo-500/30 via-sky-500/30 to-emerald-500/30",
-        panel: "from-indigo-700 via-sky-700 to-emerald-700",
-        projects: ["Notes App", "Attendance App", "Quiz App", "STEM Showcase App"],
-      },
-      {
-        id: "cpp",
-        group: "coding",
-        title: "C++ Programming",
-        tagline: "Logic, structures & problem-solving for robotics.",
-        level: "CORE CS",
-        icon: Code2,
-        tools: "C++ • DSA Basics",
-        accent: "from-slate-200 via-indigo-300 to-sky-300",
-        glow: "from-slate-500/25 via-indigo-500/25 to-sky-500/25",
-        panel: "from-slate-800 via-indigo-800 to-sky-800",
-        projects: ["Calculator", "Arrays & Patterns", "Mini Student Record System", "Basic OOP Project"],
-      },
-      {
-        id: "python",
-        group: "coding",
-        title: "Python Programming",
-        tagline: "From basics to automation + AI-ready skills.",
-        level: "FAST + POWERFUL",
-        icon: TerminalSquare,
-        tools: "Python • Projects • AI Basics",
-        accent: "from-emerald-300 via-sky-300 to-indigo-300",
-        glow: "from-emerald-500/25 via-sky-500/25 to-indigo-500/25",
-        panel: "from-emerald-700 via-sky-700 to-indigo-800",
-        projects: ["Automation Scripts", "Data Mini Project", "GUI Mini App", "AI Mini Demo (Basics)"],
-      },
-    ],
-    []
+function SoftButton({ isDark, icon, children, onClick }) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -2 }}
+      onClick={onClick}
+      className={cn(
+        "h-11 px-4 rounded-2xl text-[13px] font-bold inline-flex items-center gap-2 border transition-all",
+        isDark
+          ? "bg-white/10 text-white/90 border-white/10 hover:bg-white/20"
+          : "bg-white text-slate-900 border-slate-200 hover:shadow-lg shadow-sm"
+      )}
+    >
+      {icon}
+      {children}
+    </motion.button>
   );
+}
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return TRACKS.filter((t) => {
-      const groupOk = active === "all" ? true : t.group === active;
-      const text = `${t.title} ${t.tagline} ${t.tools} ${t.projects.join(" ")}`.toLowerCase();
-      const qOk = q ? text.includes(q) : true;
-      return groupOk && qOk;
-    });
-  }, [TRACKS, query, active]);
+function Select({ isDark, value, onChange, options = [] }) {
+  return (
+    <div className="relative group">
+      <select
+        value={value}
+        onChange={onChange}
+        className={cn(
+          "h-11 min-w-[170px] rounded-2xl px-4 pr-10 text-[13px] font-bold border outline-none appearance-none transition-all cursor-pointer",
+          isDark
+            ? "bg-white/5 text-white border-white/10 hover:bg-white/10 focus:border-white/30"
+            : "bg-white/60 text-slate-900 border-black/5 hover:bg-white hover:shadow-md focus:border-sky-400"
+        )}
+      >
+        {options.map((op) => (
+          <option 
+            key={op.value} 
+            value={op.value} 
+            className={isDark ? "bg-slate-900 text-white font-medium" : "bg-white text-slate-900 font-medium"}
+          >
+            {op.label}
+          </option>
+        ))}
+      </select>
+      <SlidersHorizontal className={cn("pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors", isDark ? "text-white/50 group-hover:text-white" : "text-slate-400 group-hover:text-slate-900")} />
+    </div>
+  );
+}
 
-  // ✅ page download (all/filtered)
-  const onDownload = useCallback(() => {
-    exportSyllabusPDF({
-      title: "Your Syllabus — built with Projects",
-      subtitle:
-        "3D Printing & Designing • Electronics • Scratch • Robotics • IoT • App Development • C++ • Python",
-      tracks: filtered.length ? filtered : TRACKS,
-      filename: "Syllabus_Project_First.pdf",
-    });
-  }, [filtered, TRACKS]);
+export default function Syllabus() {
+  const nav = useNavigate();
+  const themeCtx = useContext(ThemeContext);
+  const langCtx = useContext(LanguageContext);
+  const reduce = useReducedMotion();
 
-  // ✅ per-card download (single track)
-  const onDownloadTrack = useCallback((track) => {
-    exportSyllabusPDF({
-      title: `Syllabus — ${track.title}`,
-      subtitle: `${track.level} • Tools: ${track.tools}`,
-      tracks: [track],
-      filename: `Syllabus_${track.id}.pdf`,
+  const rawTheme = themeCtx?.theme ?? "dark";
+  const isDark = String(rawTheme).toLowerCase().includes("dark");
+  const language = langCtx?.language || "en";
+
+  const t = useMemo(() => {
+    const en = {
+      crumbHome: "Home",
+      crumbHere: "Syllabus",
+      title: "Course Syllabus",
+      subtitle: "Year plans, chapter mappings & subject schedules — structured and updated.",
+      searchPH: "Search syllabus, classes, or subjects...",
+      pinned: "Pinned",
+      tabs: { all: "All Syllabuses", pinned: "Pinned", recent: "Recent" },
+      classLevel: "Class",
+      download: "Download PDF",
+      reset: "Reset Filters",
+      refresh: "Refresh",
+      emptyTitle: "No syllabus found",
+      emptyHint: "Try adjusting your search or resetting filters.",
+      backHome: "Back to Dashboard",
+      pinIt: "Pin Syllabus",
+      unpinIt: "Unpin",
+      downloads: "downloads",
+      lastOpen: "last opened",
+      category: "Class Level",
+    };
+
+    const hi = {
+      crumbHome: "Home",
+      crumbHere: "Syllabus",
+      title: "कोर्स सिलेबस",
+      subtitle: "ईयर प्लान्स, चैप्टर मैपिंग्स व सब्जेक्ट शेड्यूल्स — व्यवस्थित और अपडेटेड।",
+      searchPH: "सिलेबस, क्लास या सब्जेक्ट खोजें...",
+      pinned: "पिन्ड",
+      tabs: { all: "सभी सिलेबस", pinned: "पिन्ड", recent: "रीसेंट" },
+      classLevel: "कक्षा",
+      download: "PDF डाउनलोड",
+      reset: "फिल्टर रीसेट",
+      refresh: "रिफ्रेश",
+      emptyTitle: "कोई सिलेबस नहीं मिला",
+      emptyHint: "Search बदलें या filters reset करें।",
+      backHome: "डैशबोर्ड पर जाएँ",
+      pinIt: "सिलेबस पिन करें",
+      unpinIt: "अनपिन करें",
+      downloads: "डाउनलोड",
+      lastOpen: "लास्ट ओपन",
+      category: "क्लास लेवल",
+    };
+
+    return language === "hi" ? hi : en;
+  }, [language]);
+
+  // API data
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // UI state
+  const [q, setQ] = useState("");
+  const [tab, setTab] = useState("all"); 
+  const [cat, setCat] = useState("all");
+
+  const LS_KEY = "hl_syllabus_state_v1";
+  const [syllabusState, setSyllabusState] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      return raw ? JSON.parse(raw) : { pinned: {}, lastOpened: {}, downloads: {} };
+    } catch {
+      return { pinned: {}, lastOpened: {}, downloads: {} };
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(syllabusState));
+    } catch {}
+  }, [syllabusState]);
+
+  const togglePin = useCallback((id) => {
+    setSyllabusState((prev) => {
+      const pinned = { ...(prev.pinned || {}) };
+      if (pinned[id]) delete pinned[id];
+      else pinned[id] = true;
+      return { ...prev, pinned };
     });
   }, []);
 
+  const markOpened = useCallback((id) => {
+    setSyllabusState((prev) => ({
+      ...prev,
+      lastOpened: { ...(prev.lastOpened || {}), [id]: Date.now() },
+      downloads: { ...(prev.downloads || {}), [id]: ((prev.downloads || {})[id] || 0) + 1 },
+    }));
+  }, []);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const qs = new URLSearchParams();
+      if (q) qs.set("q", q);
+      if (cat !== "all") qs.set("classLevel", cat);
+
+      const res = await fetch(`${API_BASE}/api/syllabus/student?${qs.toString()}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || "Failed to load syllabus");
+
+      const list = Array.isArray(data) ? data : data.items || [];
+      setItems(list);
+    } catch (e) {
+      console.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [q, cat]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const classes = useMemo(() => {
+    const uniq = new Set((items || []).map((x) => x.classLevel).filter(Boolean));
+    return Array.from(uniq);
+  }, [items]);
+
+  const syllabusList = useMemo(() => {
+    return (items || []).map((n) => {
+      const id = n._id || n.id;
+      return { ...n, id };
+    });
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    let arr = [...syllabusList];
+
+    arr = arr.map((n) => ({
+      ...n,
+      pinned: !!syllabusState?.pinned?.[n.id],
+      lastOpened: syllabusState?.lastOpened?.[n.id] ?? 0,
+      downloadsLocal: syllabusState?.downloads?.[n.id] ?? 0,
+    }));
+
+    if (tab === "pinned") arr = arr.filter((x) => x.pinned);
+
+    const qq = q.trim().toLowerCase();
+    if (qq) {
+      arr = arr.filter((x) => {
+        const title = pickText(x.title, language).toLowerCase();
+        const desc = pickText(x.desc, language).toLowerCase();
+        const subject = String(x.subject || "").toLowerCase();
+        return title.includes(qq) || desc.includes(qq) || subject.includes(qq);
+      });
+    }
+
+    if (tab === "recent") arr.sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
+    else arr.sort((a, b) => (b.pinned === a.pinned ? 0 : b.pinned ? 1 : -1));
+
+    return arr;
+  }, [syllabusList, syllabusState, tab, q, language]);
+
+  const resetAll = () => {
+    setQ("");
+    setTab("all");
+    setCat("all");
+  };
+
   return (
-    <div
-      className={cn(
-        "min-h-screen",
-        "bg-[radial-gradient(1200px_circle_at_10%_0%,rgba(56,189,248,0.40),transparent_45%),radial-gradient(1000px_circle_at_90%_10%,rgba(99,102,241,0.35),transparent_45%),radial-gradient(900px_circle_at_70%_92%,rgba(217,70,239,0.25),transparent_50%),linear-gradient(to_bottom,#ffffff,#f7f8ff)]",
-        "dark:bg-[radial-gradient(1200px_circle_at_10%_0%,rgba(56,189,248,0.14),transparent_45%),radial-gradient(1000px_circle_at_90%_10%,rgba(99,102,241,0.14),transparent_45%),radial-gradient(900px_circle_at_70%_92%,rgba(217,70,239,0.10),transparent_50%),linear-gradient(to_bottom,#060913,#02040b)]"
-      )}
-    >
-      <div className="mx-auto w-full max-w-[1200px] px-3 sm:px-4 md:px-6 lg:px-8 py-6">
-        {/* top bar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/home")}
+    <div className={pageWrap}>
+      <AnimatedBackground isDark={isDark} />
+
+      <div className={container}>
+        {/* Top Nav Row */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className={cn("flex items-center gap-2 text-[13px] font-medium tracking-wide", isDark ? "text-white/60" : "text-slate-500")}>
+            <Link to="/home" className={cn("hover:opacity-100 transition-opacity", isDark ? "hover:text-white" : "hover:text-slate-900")}>
+              {t.crumbHome}
+            </Link>
+            <ChevronRight className="h-4 w-4 opacity-50" />
+            <span className={cn("font-bold", isDark ? "text-white" : "text-slate-900")}>{t.crumbHere}</span>
+          </div>
+
+          <SoftButton isDark={isDark} icon={<ArrowLeft className="h-4 w-4" />} onClick={() => nav("/home")}>
+            {t.backHome}
+          </SoftButton>
+        </div>
+
+        {/* Hero Header */}
+        <div className="mt-12 text-center relative">
+          <div className="flex items-center justify-center">
+            <Badge isDark={isDark}>{language === "hi" ? "कक्षा-वाइज़ सिलेबस" : "Class-Wise Syllabus"}</Badge>
+          </div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className={cn("mt-6 text-5xl sm:text-7xl font-black tracking-tight", isDark ? "text-white" : "text-slate-900")}
+          >
+            {t.title}{" "}
+            <span className="bg-gradient-to-tr from-sky-400 via-indigo-400 to-fuchsia-500 bg-clip-text text-transparent inline-block hover:scale-110 transition-transform cursor-default">
+              ✨
+            </span>
+          </motion.h1>
+
+          <motion.p 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 1 }}
+            className={cn("mx-auto mt-6 max-w-2xl text-[15px] sm:text-[17px] font-medium leading-relaxed", isDark ? "text-white/60" : "text-slate-600")}
+          >
+            {t.subtitle}
+          </motion.p>
+        </div>
+
+        {/* Sticky Glassmorphic Controls */}
+        <div className="sticky top-4 z-40 mt-12 transition-all">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
             className={cn(
-              "inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-[12px] font-extrabold",
-              "border border-black/10 bg-white/80 text-slate-950 shadow-sm backdrop-blur hover:bg-white",
-              "dark:border-white/10 dark:bg-white/10 dark:text-white/90 dark:hover:bg-white/15"
+              "rounded-[32px] p-[1.5px] shadow-[0_20px_60px_rgba(0,0,0,0.1)]",
+              isDark ? "bg-gradient-to-r from-sky-500/30 via-indigo-500/30 to-fuchsia-500/30" : "bg-gradient-to-r from-sky-400/50 via-indigo-400/50 to-fuchsia-400/50"
             )}
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </motion.button>
-
-          <div className="flex flex-wrap items-center gap-2 justify-between sm:justify-end">
-            <GradientChip icon={Sparkles}>PROJECT-FIRST SYLLABUS</GradientChip>
-
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={onDownload}
+            <div
               className={cn(
-                "inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-[12px] font-black",
-                "bg-slate-900 text-white shadow-[0_16px_50px_rgba(2,6,23,0.25)] hover:brightness-110 active:brightness-95",
-                "dark:bg-white dark:text-slate-950"
+                "relative overflow-hidden rounded-[30px] border backdrop-blur-3xl p-4 transition-all",
+                isDark ? "bg-slate-950/70 border-white/10" : "bg-white/80 border-white/60"
               )}
             >
-              <Download className="h-4 w-4" />
-              Download PDF
-            </motion.button>
-          </div>
+              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                {/* Search Bar */}
+                <div className="relative flex-1 group">
+                  <Search className={cn("absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors", isDark ? "text-white/40 group-focus-within:text-sky-400" : "text-slate-400 group-focus-within:text-sky-500")} />
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder={t.searchPH}
+                    className={cn(
+                      "w-full h-14 rounded-2xl pl-12 pr-12 text-[15px] font-bold outline-none border transition-all shadow-inner",
+                      isDark
+                        ? "bg-black/20 text-white placeholder:text-white/30 border-white/10 focus:border-sky-500/50 focus:bg-black/40 focus:shadow-[0_0_20px_rgba(14,165,233,0.15)]"
+                        : "bg-slate-100/50 text-slate-900 placeholder:text-slate-400 border-black/5 focus:border-sky-400 focus:bg-white focus:shadow-[0_0_20px_rgba(14,165,233,0.1)]"
+                    )}
+                  />
+                  <AnimatePresence>
+                    {q && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                        type="button"
+                        onClick={() => setQ("")}
+                        className={cn(
+                          "absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-xl grid place-items-center border hover:scale-105 transition-transform",
+                          isDark ? "bg-white/10 border-white/20 text-white/90 hover:bg-white/20" : "bg-white border-black/10 text-slate-600 hover:bg-slate-50"
+                        )}
+                      >
+                        <X className="h-4 w-4" />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Chip isDark={isDark} active={tab === "all"} icon={<Layers className="h-4 w-4" />} onClick={() => setTab("all")}>
+                    {t.tabs.all}
+                  </Chip>
+                  <Chip isDark={isDark} active={tab === "pinned"} icon={<Pin className="h-4 w-4" />} onClick={() => setTab("pinned")}>
+                    {t.tabs.pinned}
+                  </Chip>
+                  <Chip isDark={isDark} active={tab === "recent"} icon={<Clock className="h-4 w-4" />} onClick={() => setTab("recent")}>
+                    {t.tabs.recent}
+                  </Chip>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select
+                    isDark={isDark}
+                    value={cat}
+                    onChange={(e) => setCat(e.target.value)}
+                    options={[
+                      { value: "all", label: `${t.category}: ${language === "hi" ? "सभी" : "All"}` },
+                      ...classes.map((c) => ({ value: c, label: c })),
+                    ]}
+                  />
+
+                  <SoftButton isDark={isDark} icon={<Filter className="h-4 w-4" />} onClick={resetAll}>
+                    {t.reset}
+                  </SoftButton>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
-        {/* HERO */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 180, damping: 18 }}
-          className={cn(
-            "relative mt-5 overflow-hidden rounded-[34px] border",
-            "border-black/10 bg-white shadow-[0_28px_120px_rgba(0,0,0,0.14)]",
-            "dark:border-white/10 dark:bg-[#0B1020]/70 dark:shadow-[0_28px_120px_rgba(0,0,0,0.55)]"
-          )}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-sky-200/70 via-indigo-200/50 to-fuchsia-200/60 dark:from-sky-500/15 dark:via-indigo-500/15 dark:to-fuchsia-500/15" />
-          <div className="absolute inset-0 opacity-[0.16] dark:opacity-[0.18]">
-            <div
-              className="h-full w-full"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to right, rgba(15,23,42,0.28) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.28) 1px, transparent 1px)",
-                backgroundSize: "28px 28px",
-              }}
-            />
-          </div>
+        {/* Syllabus Grid */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <AnimatePresence mode="popLayout">
+            {filtered.map((n, idx) => {
+              const title = pickText(n.title, language) || "Untitled Syllabus";
+              const desc = pickText(n.desc, language) || "No description provided.";
+              const subject = n.subject || "General";
+              const classLevel = n.classLevel || "";
 
-          {!reduce && (
-            <>
-              <motion.div
-                aria-hidden
-                animate={{ y: [0, -10, 0], x: [0, 10, 0] }}
-                transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
-                className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full bg-sky-400/35 blur-3xl dark:bg-sky-400/12"
-              />
-              <motion.div
-                aria-hidden
-                animate={{ y: [0, 12, 0], x: [0, -12, 0] }}
-                transition={{ duration: 7.8, repeat: Infinity, ease: "easeInOut" }}
-                className="pointer-events-none absolute -left-20 bottom-[-70px] h-80 w-80 rounded-full bg-fuchsia-400/30 blur-3xl dark:bg-fuchsia-400/12"
-              />
-              <motion.div
-                aria-hidden
-                animate={{ y: [0, -8, 0], x: [0, -10, 0] }}
-                transition={{ duration: 8.8, repeat: Infinity, ease: "easeInOut" }}
-                className="pointer-events-none absolute left-1/2 top-[-120px] h-96 w-96 -translate-x-1/2 rounded-full bg-indigo-400/24 blur-3xl dark:bg-indigo-400/10"
-              />
-            </>
-          )}
+              return (
+                <SyllabusCard3D
+                  key={n.id}
+                  isDark={isDark}
+                  accent={"from-sky-400 via-indigo-400 to-fuchsia-500"}
+                  idx={idx}
+                >
+                  <div className="mt-[-42px] flex items-center justify-between z-10 relative">
+                    <div className="flex items-center gap-3">
+                      <motion.div
+                        className={cn(
+                          "h-14 w-14 rounded-[22px] grid place-items-center border backdrop-blur-2xl transition-shadow",
+                          isDark
+                            ? "bg-slate-900/80 border-white/20 shadow-[0_20px_40px_rgba(0,0,0,0.4)] group-hover:shadow-[0_20px_40px_rgba(56,189,248,0.2)]"
+                            : "bg-white/90 border-white shadow-[0_20px_40px_rgba(2,6,23,0.1)] group-hover:shadow-[0_20px_40px_rgba(56,189,248,0.2)]"
+                        )}
+                        whileHover={reduce ? {} : { rotate: 8, scale: 1.05 }}
+                      >
+                        <GraduationCap className={cn("h-6 w-6", isDark ? "text-white" : "text-indigo-600")} />
+                      </motion.div>
 
-          <div className="relative p-5 sm:p-7 md:p-9">
-            <div className="flex flex-wrap items-center gap-2">
-              <SoftChip icon={SlidersHorizontal}>MODERN • 3D • ANIMATED</SoftChip>
-              <SoftChip icon={FileText}>PDF EXPORT READY</SoftChip>
-            </div>
+                      <AnimatePresence>
+                        {n.pinned && (
+                          <motion.span
+                            initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black border backdrop-blur-xl uppercase tracking-wider",
+                              isDark ? "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30" : "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200"
+                            )}
+                          >
+                            <Pin className="h-3.5 w-3.5" />
+                            {t.pinned}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
-            <h1 className="mt-3 text-[26px] leading-tight font-black text-slate-950 dark:text-white sm:text-[32px] md:text-[40px]">
-              Your{" "}
-              {/* ✅ ALWAYS visible: fallback text + gradient only when supported + stroke */}
-              <span
-                className={cn(
-  // ✅ fallback (always visible)
-  "text-slate-950 dark:text-white",
-  // ✅ gradient only when supported
-  "supports-[background-clip:text]:bg-clip-text supports-[background-clip:text]:text-transparent",
-  "supports-[background-clip:text]:bg-gradient-to-r",
-  // ✅ darker gradient (light bg pe bhi clear)
-  "supports-[background-clip:text]:from-sky-900 supports-[background-clip:text]:via-indigo-950 supports-[background-clip:text]:to-fuchsia-900",
-  "dark:supports-[background-clip:text]:from-sky-300 dark:supports-[background-clip:text]:via-indigo-300 dark:supports-[background-clip:text]:to-fuchsia-300",
-  // ✅ outline + shadow so it never washes out
-  "[-webkit-text-stroke:0.8px_rgba(15,23,42,0.35)] dark:[-webkit-text-stroke:0.6px_rgba(255,255,255,0.10)]",
-  "drop-shadow-[0_2px_0_rgba(255,255,255,0.95)] dark:drop-shadow-[0_2px_0_rgba(0,0,0,0.65)]"
-)}
+                    <motion.button
+                      whileHover={{ scale: 1.1, rotate: n.pinned ? 0 : -10 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => togglePin(n.id)}
+                      className={cn(
+                        "h-11 w-11 rounded-[20px] grid place-items-center border backdrop-blur-xl transition-colors",
+                        isDark ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-white border-black/5 shadow-sm hover:bg-slate-50"
+                      )}
+                      title={n.pinned ? t.unpinIt : t.pinIt}
+                    >
+                      <Pin
+                        className={cn("h-5 w-5 transition-colors", n.pinned ? "text-fuchsia-500" : isDark ? "text-white/60 group-hover:text-white" : "text-slate-400 group-hover:text-slate-700")}
+                        fill={n.pinned ? "currentColor" : "none"}
+                      />
+                    </motion.button>
+                  </div>
 
-              >
-                Syllabus
-              </span>{" "}
-              — built with Projects
-            </h1>
+                  <div className="flex-1 mt-6">
+                    <h3 className={cn("text-[17px] font-black leading-tight", isDark ? "text-white" : "text-slate-900")}>
+                      {title}
+                    </h3>
+                    <p className={cn("mt-2 text-[13px] font-medium leading-relaxed line-clamp-2", isDark ? "text-white/60" : "text-slate-500")}>
+                      {desc}
+                    </p>
+                  </div>
 
-            <p className="mt-2 max-w-3xl text-[13px] text-slate-800/95 dark:text-white/75 md:text-[14px]">
-              3D Printing & Designing, Electronics, Scratch, Robotics, IoT, App Development, C++ and Python —
-              <span className="font-semibold"> project-first</span> learning for every track.
-            </p>
+                  <div className={cn("mt-6 grid grid-cols-2 gap-y-3 gap-x-2 text-[12px] font-bold", isDark ? "text-white/50" : "text-slate-500")}>
+                    <span className="inline-flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-emerald-500" />
+                      {classLevel}
+                    </span>
+                    <span className="inline-flex items-center gap-2 justify-end">
+                      <Tag className="h-4 w-4 text-sky-500" />
+                      <span className="truncate">{subject}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <Download className="h-4 w-4 text-fuchsia-500" />
+                      {n.downloadsLocal} {t.downloads}
+                    </span>
+                    <span className="inline-flex items-center gap-2 justify-end">
+                      <RefreshCcw className="h-4 w-4 text-indigo-400" />
+                      <span className="truncate">{fmtAgo(n.lastOpened)}</span>
+                    </span>
+                  </div>
 
-            <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="relative w-full md:max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 text-slate-700 dark:text-white/60" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search syllabus (robotics, python, app, iot...)"
-                  className={cn(
-                    "w-full rounded-2xl border pl-9 pr-10 py-3 text-[12px] font-semibold outline-none",
-                    "border-black/10 bg-white/85 text-slate-950 placeholder:text-slate-500/80",
-                    "shadow-sm backdrop-blur focus:ring-2 focus:ring-indigo-400/45",
-                    "dark:border-white/10 dark:bg-white/10 dark:text-white dark:placeholder:text-white/45"
-                  )}
-                />
-                {query?.length > 0 && (
-                  <button
-                    onClick={() => setQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl p-2 border border-black/10 bg-white/85 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/15"
-                    aria-label="clear"
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      markOpened(n.id);
+                      window.open(`${API_BASE}/api/syllabus/download/${n.id}`, "_blank", "noopener,noreferrer");
+                    }}
+                    className={cn(
+                      "mt-6 w-full rounded-2xl px-4 py-3.5 text-[14px] font-black tracking-wide inline-flex items-center justify-center gap-2 border transition-all duration-300 relative overflow-hidden group/btn",
+                      isDark
+                        ? "bg-white/10 text-white border-white/20 hover:bg-white/15 hover:border-white/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]"
+                        : "bg-slate-900 text-white border-slate-800 hover:bg-slate-800 hover:shadow-lg"
+                    )}
                   >
-                    <X className="h-3.5 w-3.5 text-slate-800 dark:text-white/80" />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <FilterPill active={active === "all"} onClick={() => setActive("all")}>
-                  All
-                </FilterPill>
-                <FilterPill active={active === "core"} onClick={() => setActive("core")}>
-                  Core Tech
-                </FilterPill>
-                <FilterPill active={active === "coding"} onClick={() => setActive("coding")}>
-                  Coding
-                </FilterPill>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* grid */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((t, idx) => (
-            <TrackCard
-              key={t.id}
-              track={t}
-              index={idx}
-              onOpen={setOpenTrack}
-              onDownloadTrack={onDownloadTrack}
-            />
-          ))}
+                    <div className="absolute inset-0 bg-gradient-to-r from-sky-400 via-indigo-400 to-fuchsia-500 opacity-0 group-hover/btn:opacity-20 transition-opacity duration-500" />
+                    <Download className="h-4 w-4 relative z-10" />
+                    <span className="relative z-10">{t.download}</span>
+                  </motion.button>
+                </SyllabusCard3D>
+              );
+            })}
+          </AnimatePresence>
         </div>
 
-        {filtered.length === 0 && (
-          <div className="mt-6 rounded-[26px] border border-black/10 bg-white/80 p-6 text-center dark:border-white/10 dark:bg-white/10">
-            <div className="text-[14px] font-black text-slate-950 dark:text-white">No results</div>
-            <div className="mt-1 text-[12px] text-slate-700 dark:text-white/70">
-              Try a different keyword (e.g., “robot”, “python”, “app”, “iot”).
+        {/* Empty State */}
+        {!loading && filtered.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={cn(
+              "mt-12 mx-auto max-w-md rounded-[32px] border backdrop-blur-2xl p-10 text-center shadow-2xl",
+              isDark ? "border-white/10 bg-white/5" : "border-slate-200 bg-white"
+            )}
+          >
+            <div
+              className={cn(
+                "mx-auto h-20 w-20 rounded-[28px] grid place-items-center border shadow-inner",
+                isDark ? "bg-slate-900 border-white/20 text-white/50" : "bg-slate-50 border-slate-200 text-slate-400"
+              )}
+            >
+              <FileText className="h-10 w-10" />
             </div>
-          </div>
+            <p className={cn("mt-6 text-xl font-black", isDark ? "text-white" : "text-slate-900")}>{t.emptyTitle}</p>
+            <p className={cn("mt-2 text-[15px] font-medium leading-relaxed", isDark ? "text-white/60" : "text-slate-500")}>{t.emptyHint}</p>
+            
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={resetAll}
+              className={cn(
+                "mt-8 px-8 py-3 rounded-2xl font-bold text-[14px] transition-colors border",
+                isDark ? "bg-sky-500/20 text-sky-400 border-sky-500/30 hover:bg-sky-500/30" : "bg-sky-50 text-sky-600 border-sky-200 hover:bg-sky-100"
+              )}
+            >
+              {t.reset}
+            </motion.button>
+          </motion.div>
         )}
-
-        {/* bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ type: "spring", stiffness: 180, damping: 18 }}
-          className={cn(
-            "mt-6 overflow-hidden rounded-[30px] border",
-            "border-black/10 bg-white shadow-[0_22px_80px_rgba(0,0,0,0.12)]",
-            "dark:border-white/10 dark:bg-[#0B1020]/70 dark:shadow-[0_22px_80px_rgba(0,0,0,0.55)]"
-          )}
-        >
-          
-        </motion.div>
       </div>
-
-      <TrackModal open={!!openTrack} onClose={() => setOpenTrack(null)} track={openTrack} />
     </div>
   );
 }

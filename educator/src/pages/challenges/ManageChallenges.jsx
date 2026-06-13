@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, Check, Loader2, Target, Award, Eye, Zap, Sparkles, Trash2 } from "lucide-react";
 import { API_BASE_URL } from "../../utils/data";
 import { motion, AnimatePresence } from "framer-motion";
+import SchoolClassChecklist from "../../components/SchoolClassChecklist";
 
 const THEMES = [
   { id: "cyan", name: "Space Cyan", from: "from-cyan-400", to: "to-blue-600", text: "text-cyan-500", ring: "ring-cyan-500" },
@@ -22,12 +23,11 @@ export default function ManageChallenges() {
   const [points, setPoints] = useState(40);
   const [selectedTheme, setSelectedTheme] = useState("cyan");
   const [targetSchools, setTargetSchools] = useState([]);
+  const [targetClasses, setTargetClasses] = useState([]);
 
   const [statsModal, setStatsModal] = useState({ isOpen: false, data: null, loading: false, challengeTitle: "" });
 
   const token = localStorage.getItem("accessToken") || "";
-  const user = JSON.parse(localStorage.getItem("steam_user") || "{}");
-  const mySchools = user.assignedSchools || [];
 
   useEffect(() => {
     fetchChallenges();
@@ -53,10 +53,6 @@ export default function ManageChallenges() {
     setOptions(newOptions);
   };
 
-  const toggleSchool = (sch) => {
-    setTargetSchools(prev => prev.includes(sch) ? prev.filter(s => s !== sch) : [...prev, sch]);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!question || options.some(o => !o.trim())) return alert("Please fill all fields.");
@@ -69,7 +65,7 @@ export default function ManageChallenges() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ question, options, correctOptionIndex: correctOption, points, theme: selectedTheme, targetSchools })
+        body: JSON.stringify({ question, options, correctOptionIndex: correctOption, points, theme: selectedTheme, targetSchools, targetClasses })
       });
       const data = await res.json();
       if (data.ok) {
@@ -78,6 +74,7 @@ export default function ManageChallenges() {
         setCorrectOption(0);
         setPoints(40);
         setTargetSchools([]);
+        setTargetClasses([]);
         fetchChallenges();
       } else {
         alert(data.message || "Failed to post");
@@ -221,45 +218,15 @@ export default function ManageChallenges() {
               </div>
             </div>
 
-            {/* Target Schools */}
-            {mySchools.length > 0 && (
-              <div>
-                <label className="block text-sm font-semibold mb-3 flex items-center justify-between">
-                  <span>Target Schools</span>
-                  <span className="text-[10px] text-slate-400 uppercase tracking-widest">Optional</span>
-                </label>
-                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 max-h-40 overflow-y-auto space-y-1">
-                  {mySchools.map(sch => (
-                    <label 
-                      key={sch} 
-                      className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer transition ${
-                        targetSchools.includes(sch) ? 'bg-indigo-500/10' : 'hover:bg-slate-200 dark:hover:bg-slate-700/50'
-                      }`}
-                    >
-                      <input 
-                         type="checkbox" 
-                         className="hidden" 
-                         checked={targetSchools.includes(sch)} 
-                         onChange={() => toggleSchool(sch)} 
-                      />
-                      <div className={`w-4 h-4 rounded flex items-center justify-center border transition ${
-                        targetSchools.includes(sch) 
-                          ? "bg-indigo-500 border-indigo-500" 
-                          : "border-slate-300 dark:border-slate-600"
-                      }`}>
-                        {targetSchools.includes(sch) && <Check className="h-3 w-3 text-white" />}
-                      </div>
-                      <span className={`text-sm ${targetSchools.includes(sch) ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-600 dark:text-slate-400 font-medium"}`}>
-                        {sch}
-                      </span>
-                    </label>
-                  ))}
-                  <p className="text-xs text-slate-400 pt-1 px-1 italic">
-                    If no school is selected, the challenge will be visible to all your assigned schools.
-                  </p>
-                </div>
-              </div>
-            )}
+            {/* Target Schools and Classes */}
+            <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <SchoolClassChecklist
+                selectedSchools={targetSchools}
+                onChangeSchools={setTargetSchools}
+                selectedClasses={targetClasses}
+                onChangeClasses={setTargetClasses}
+              />
+            </div>
 
             {/* Points & Submit */}
             <div className="flex flex-col sm:flex-row gap-4 items-end pt-2">

@@ -13,6 +13,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { api, getApiError } from "../api/axios";
+import SchoolClassChecklist from "../components/SchoolClassChecklist";
 
 /* ---------------- Utils ---------------- */
 const cn = (...s) => s.filter(Boolean).join(" ");
@@ -157,9 +158,8 @@ const normalizeSchool = (s, index = 0) => {
 export default function SchoolCourses() {
   const token = localStorage.getItem("accessToken") || "";
 
-  const [schools, setSchools] = useState([]);
-  const [schoolId, setSchoolId] = useState("");
-  const [classLevel, setClassLevel] = useState("6");
+  const [targetSchools, setTargetSchools] = useState([]);
+  const [targetClasses, setTargetClasses] = useState([]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -178,58 +178,17 @@ export default function SchoolCourses() {
   const [assigning, setAssigning] = useState(false);
   const [assignAttempted, setAssignAttempted] = useState(false);
 
-  const fetchSchools = useCallback(async () => {
-    if (!token) {
-      setSchools([]);
-      setSchoolId("");
-      setErr("Token missing. Please login again.");
-      return;
-    }
-
-    try {
-      setErr("");
-
-      const res = await api.get("/educator/schools", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache",
-        },
-      });
-
-      const data = unwrap(res);
-      const rawList = extractListDeep(data);
-
-      const normalizedList = rawList
-        .map((s, index) => normalizeSchool(s, index))
-        .filter((s) => s._id && s.name);
-
-      setSchools(normalizedList);
-      setSchoolId((prev) => {
-        if (prev && normalizedList.some((s) => s._id === prev)) return prev;
-        return normalizedList[0]?._id || "";
-      });
-    } catch (e) {
-      console.error("fetchSchools error =", e);
-      setErr(getApiError(e, "Failed to load schools"));
-      setSchools([]);
-      setSchoolId("");
-    }
-  }, [token]);
-
   const fetchAssignments = useCallback(async () => {
-    if (!schoolId) {
-      setItems([]);
-      setEditMap({});
-      return;
-    }
-
     setLoading(true);
 
     try {
       setErr("");
 
       const res = await api.get("/educator/assignments", {
-        params: { schoolId, classLevel },
+        params: { 
+          targetSchools: JSON.stringify(targetSchools),
+          targetClasses: JSON.stringify(targetClasses)
+        },
         headers: {
           Authorization: `Bearer ${token}`,
           "Cache-Control": "no-cache",
@@ -278,14 +237,14 @@ export default function SchoolCourses() {
     } finally {
       setLoading(false);
     }
-  }, [schoolId, classLevel, token]);
+  }, [targetSchools, targetClasses, token]);
 
   const fetchCourses = useCallback(async () => {
     if (!token) return;
 
     try {
       const res = await api.get("/courses/mine", {
-        params: { classLevel },
+        // Omitting classLevel to get all courses since we have multiple classes
         headers: {
           Authorization: `Bearer ${token}`,
           "Cache-Control": "no-cache",
@@ -299,11 +258,7 @@ export default function SchoolCourses() {
       console.error("fetchCourses error =>", e);
       setCourses([]);
     }
-  }, [token, classLevel]);
-
-  useEffect(() => {
-    fetchSchools();
-  }, [fetchSchools]);
+  }, [token]);
 
   useEffect(() => {
     fetchAssignments();
@@ -393,14 +348,10 @@ export default function SchoolCourses() {
     return patchAssignment(assignmentId, { status: next });
   };
 
-  const canOpenAssign = Boolean(schoolId && classLevel);
+  const canOpenAssign = true;
 
   const openAssign = () => {
     setAssignAttempted(true);
-    if (!canOpenAssign) {
-      setErr("Please select School and Class first.");
-      return;
-    }
     setErr("");
     setAssignOpen(true);
     fetchCourses();
@@ -408,8 +359,8 @@ export default function SchoolCourses() {
 
   const assignCourse = async () => {
     setAssignAttempted(true);
-    if (!schoolId || !classLevel || !selectedCourseId) {
-      setErr("Please select School, Class and Course.");
+    if (targetSchools.length === 0 || targetClasses.length === 0 || !selectedCourseId) {
+      setErr("Please select at least one School, one Class and a Course.");
       return;
     }
 
@@ -417,11 +368,11 @@ export default function SchoolCourses() {
     setErr("");
 
     try {
-      await api.post(
+      const res = await api.post(
         "/educator/assignments",
         {
-          schoolId,
-          classLevel,
+          targetSchools,
+          targetClasses,
           courseId: selectedCourseId,
           expectedWeeks: clamp(assignWeeks, 1, 999),
           status: "pending",
@@ -442,11 +393,6 @@ export default function SchoolCourses() {
       setAssigning(false);
     }
   };
-
-  const selectedSchool = useMemo(
-    () => schools.find((s) => s._id === schoolId),
-    [schools, schoolId]
-  );
 
   const filteredCourses = useMemo(() => {
     const q = (courseQ || "").trim().toLowerCase();
@@ -554,55 +500,19 @@ export default function SchoolCourses() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] gap-2">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-          <div className="text-[10px] uppercase tracking-[0.16em] text-white/55 font-extrabold">School</div>
-
-          <select
-            value={schoolId}
-            onChange={(e) => {
-              setSchoolId(e.target.value);
-              setAssignAttempted(false);
-              setErr("");
-            }}
-            className="mt-2 w-full rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-[12px] text-white outline-none"
-          >
-            <option value="" className="text-black">Select School</option>
-            {Array.isArray(schools) &&
-              schools.map((s) => (
-                <option key={s._id} value={s._id} className="text-black">
-                  {s.name}
-                </option>
-              ))}
-          </select>
-
-          <div className="mt-2 text-[11px] text-white/55 font-semibold">
-            Schools loaded: <span className="text-white/85 font-black">{schools.length}</span>
-          </div>
-
-          {selectedSchool ? (
-            <div className="mt-2 text-[11px] text-white/55 font-semibold">
-              Selected: <span className="text-white/85 font-black">{selectedSchool.name}</span>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-          <div className="text-[10px] uppercase tracking-[0.16em] text-white/55 font-extrabold">Class</div>
-          <select
-            value={classLevel}
-            onChange={(e) => {
-              setClassLevel(e.target.value);
-              setAssignAttempted(false);
-              setErr("");
-            }}
-            className="mt-2 w-full rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-[12px] text-white outline-none"
-          >
-            {["4", "5", "6", "7", "8", "9", "10", "11", "12"].map((c) => (
-              <option key={c} value={c} className="text-black">{c}</option>
-            ))}
-          </select>
-        </div>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <SchoolClassChecklist
+          selectedSchools={targetSchools}
+          onChangeSchools={(schools) => {
+            setTargetSchools(schools);
+            setAssignAttempted(false);
+          }}
+          selectedClasses={targetClasses}
+          onChangeClasses={(classes) => {
+            setTargetClasses(classes);
+            setAssignAttempted(false);
+          }}
+        />
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -642,7 +552,7 @@ export default function SchoolCourses() {
               <div>
                 <div className="text-white font-black text-[15px]">Assign New Course</div>
                 <div className="text-white/60 text-[12px] font-semibold">
-                  {selectedSchool?.name || "School"} • Class {classLevel}
+                  To {targetSchools.length} schools and {targetClasses.length} classes
                 </div>
               </div>
               <button
@@ -750,7 +660,7 @@ export default function SchoolCourses() {
           <div className="text-[12px] text-white/70 font-semibold">Loading…</div>
         ) : visibleItems.length === 0 ? (
           <div className="text-[12px] text-white/70 font-semibold">
-            No assigned courses found for selected school/class.
+            No assigned courses found for selected combinations.
           </div>
         ) : (
           <div className="space-y-3">
@@ -958,9 +868,6 @@ export default function SchoolCourses() {
         )}
       </div>
 
-      {!schoolId && assignAttempted ? (
-        <div className="text-[12px] text-white/60 font-semibold">⚠️ Pehle School select karein.</div>
-      ) : null}
     </div>
   );
 }

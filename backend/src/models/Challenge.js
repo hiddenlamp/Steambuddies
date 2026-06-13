@@ -10,6 +10,7 @@ const challengeSchema = new mongoose.Schema(
     theme: { type: String, enum: ["cyan", "purple", "orange", "emerald", "rose"], default: "cyan" },
     activeDate: { type: Date, required: true, default: Date.now }, // Date the challenge is for
     targetSchools: [{ type: String, trim: true }], // Array of school names. If empty, visible to all.
+    targetClasses: [{ type: String, trim: true }], // Array of class levels e.g., 'Class 2'. If empty, visible to all.
   },
   { timestamps: true }
 );

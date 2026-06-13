@@ -10,11 +10,11 @@ import {
   Loader2,
   X,
   Plus,
-  School as SchoolIcon,
   GraduationCap,
   Link2,
 } from "lucide-react";
 import { api, getApiError } from "../../api/axios";
+import SchoolClassChecklist from "../../components/SchoolClassChecklist";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 const unwrap = (res) => res?.data ?? res ?? {};
@@ -56,12 +56,9 @@ export default function ProjectCreate() {
   const [projects, setProjects] = useState([""]);
 
   const [assignNow, setAssignNow] = useState(true);
-  const [schools, setSchools] = useState([]);
-  const [schoolId, setSchoolId] = useState("");
-  const [classLevel, setClassLevel] = useState("");
+  const [targetSchools, setTargetSchools] = useState([]);
+  const [targetClasses, setTargetClasses] = useState([]);
   const [assignStatus, setAssignStatus] = useState("active");
-  const [schoolsLoading, setSchoolsLoading] = useState(false);
-  const [schoolsErr, setSchoolsErr] = useState("");
 
   const normalizeUrl = (v) => String(v || "").trim();
 
@@ -72,70 +69,12 @@ export default function ProjectCreate() {
     if (!title.trim()) return false;
     if (!track) return false;
     if (!normalizeUrl(videoUrl)) return false;
-    if (assignNow && !schoolId) return false;
-    if (assignNow && !classLevel) return false;
+    if (assignNow && targetSchools.length === 0) return false;
+    if (assignNow && targetClasses.length === 0) return false;
     return true;
-  }, [title, track, videoUrl, assignNow, schoolId, classLevel]);
+  }, [title, track, videoUrl, assignNow, targetSchools, targetClasses]);
 
-  const loadSchools = useCallback(async () => {
-    try {
-      setSchoolsErr("");
-
-      if (!token) {
-        setSchools([]);
-        setSchoolId("");
-        setSchoolsErr("Login required. Please login again.");
-        return;
-      }
-
-      setSchoolsLoading(true);
-
-      const res = await api.get("/educator/schools", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache",
-        },
-      });
-
-      const data = unwrap(res);
-
-      const raw = Array.isArray(data?.items)
-        ? data.items
-        : Array.isArray(data?.schools)
-        ? data.schools
-        : Array.isArray(data)
-        ? data
-        : [];
-
-      const list = raw
-        .map((s, index) => ({
-          _id: String(s?._id || s?.id || `school-${index}`).trim(),
-          name: String(
-            s?.name || s?.schoolName || s?.title || `School ${index + 1}`
-          ).trim(),
-        }))
-        .filter((x) => x._id && x.name);
-
-      setSchools(list);
-
-      setSchoolId((prev) => {
-        if (prev && list.some((x) => x._id === prev)) return prev;
-        return "";
-      });
-    } catch (e) {
-      console.error("loadSchools error =>", e);
-      setSchools([]);
-      setSchoolId("");
-      setSchoolsErr(getApiError(e, "Failed to load schools"));
-    } finally {
-      setSchoolsLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (!assignNow) return;
-    loadSchools();
-  }, [assignNow, loadSchools]);
+  // loadSchools is not needed since SchoolClassChecklist fetches internally
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -225,8 +164,8 @@ export default function ProjectCreate() {
           "/educator/project-assignments",
           {
             projectId: createdId,
-            schoolId: String(schoolId),
-            classLevel: String(classLevel),
+            targetSchools,
+            targetClasses,
             status: String(assignStatus || "active"),
           },
           {
@@ -560,68 +499,14 @@ export default function ProjectCreate() {
 
             {assignNow && (
               <div className="mt-3 grid gap-2">
-                <div>
-                  <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
-                    <SchoolIcon className="h-4 w-4" /> School
-                  </label>
+                <SchoolClassChecklist
+                  selectedSchools={targetSchools}
+                  onChangeSchools={setTargetSchools}
+                  selectedClasses={targetClasses}
+                  onChangeClasses={setTargetClasses}
+                />
 
-                  <select
-                    value={schoolId}
-                    onChange={(e) => setSchoolId(e.target.value)}
-                    className="mt-1 w-full rounded-2xl bg-black/25 border border-white/10 px-3 py-2.5 text-[13px] text-white outline-none"
-                    disabled={schoolsLoading}
-                  >
-                    <option value="" className="text-black">
-                      {schoolsLoading ? "Loading schools..." : "Select School"}
-                    </option>
-
-                    {schools.map((s) => (
-                      <option key={s._id} value={s._id} className="text-black">
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {schoolsErr ? (
-                    <div className="mt-2 text-[11px] text-red-200/90 font-semibold">
-                      {schoolsErr}
-                      <button
-                        type="button"
-                        onClick={loadSchools}
-                        className="ml-2 underline text-white/80"
-                      >
-                        Retry
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="mt-2 text-[11px] text-white/55 font-semibold">
-                      Schools loaded:{" "}
-                      <span className="text-white/85 font-black">{schools.length}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4" /> Class
-                    </label>
-                    <select
-                      value={classLevel}
-                      onChange={(e) => setClassLevel(e.target.value)}
-                      className="mt-1 w-full rounded-2xl bg-black/25 border border-white/10 px-3 py-2.5 text-[13px] text-white outline-none"
-                    >
-                      <option value="" className="text-black">
-                        Select Class
-                      </option>
-                      {CLASSES.map((c) => (
-                        <option key={c} value={c} className="text-black">
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
+                <div className="grid grid-cols-1 gap-2">
                   <div>
                     <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
                       <Link2 className="h-4 w-4" /> Status
@@ -677,17 +562,17 @@ export default function ProjectCreate() {
 
               {assignNow && (
                 <>
-                  <div className={cn("flex items-center justify-between rounded-2xl px-3 py-2 border", schoolId ? "border-emerald-400/25 bg-emerald-500/10" : "border-white/10 bg-white/5")}>
+                  <div className={cn("flex items-center justify-between rounded-2xl px-3 py-2 border", targetSchools.length > 0 ? "border-emerald-400/25 bg-emerald-500/10" : "border-white/10 bg-white/5")}>
                     <span>School Assignment</span>
-                    <span className={cn(schoolId ? "text-emerald-200" : "text-white/55")}>
-                      {schoolId ? "OK" : "Required"}
+                    <span className={cn(targetSchools.length > 0 ? "text-emerald-200" : "text-white/55")}>
+                      {targetSchools.length > 0 ? "OK" : "Required"}
                     </span>
                   </div>
 
-                  <div className={cn("flex items-center justify-between rounded-2xl px-3 py-2 border", classLevel ? "border-emerald-400/25 bg-emerald-500/10" : "border-white/10 bg-white/5")}>
+                  <div className={cn("flex items-center justify-between rounded-2xl px-3 py-2 border", targetClasses.length > 0 ? "border-emerald-400/25 bg-emerald-500/10" : "border-white/10 bg-white/5")}>
                     <span>Class Assignment</span>
-                    <span className={cn(classLevel ? "text-emerald-200" : "text-white/55")}>
-                      {classLevel ? "OK" : "Required"}
+                    <span className={cn(targetClasses.length > 0 ? "text-emerald-200" : "text-white/55")}>
+                      {targetClasses.length > 0 ? "OK" : "Required"}
                     </span>
                   </div>
                 </>

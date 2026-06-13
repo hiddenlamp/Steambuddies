@@ -8,11 +8,11 @@ import {
   Save,
   X,
   ArrowLeft,
-  School as SchoolIcon,
   GraduationCap,
   Link2,
 } from "lucide-react";
 import { api, getApiError } from "../../api/axios";
+import SchoolClassChecklist from "../../components/SchoolClassChecklist";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 
@@ -55,9 +55,8 @@ export default function EducatorManualNew() {
   const [publishNow, setPublishNow] = useState(true);
 
   const [assignNow, setAssignNow] = useState(true);
-  const [schools, setSchools] = useState([]);
-  const [schoolId, setSchoolId] = useState("");
-  const [classLevel, setClassLevel] = useState("6");
+  const [targetSchools, setTargetSchools] = useState([]);
+  const [targetClasses, setTargetClasses] = useState([]);
   const [assignStatus, setAssignStatus] = useState("active");
 
   const [saving, setSaving] = useState(false);
@@ -73,63 +72,7 @@ export default function EducatorManualNew() {
       .slice(0, 20);
   }, [tagsText]);
 
-  const loadSchools = useCallback(async () => {
-    try {
-      setSchoolsErr("");
-
-      if (!cleanToken) {
-        setSchools([]);
-        setSchoolId("");
-        setSchoolsErr("Token missing. Please login as Educator.");
-        return;
-      }
-
-      setSchoolsLoading(true);
-
-      const res = await api.get("/educator/schools", {
-        headers: {
-          Authorization: `Bearer ${cleanToken}`,
-          "Cache-Control": "no-cache",
-        },
-      });
-
-      const data = unwrap(res);
-
-      const raw =
-        Array.isArray(data?.items) ? data.items :
-        Array.isArray(data?.schools) ? data.schools :
-        Array.isArray(data) ? data :
-        [];
-
-      const list = raw
-        .map((s, index) => ({
-          _id: String(s?._id || s?.id || `school-${index}`).trim(),
-          name: String(s?.name || s?.schoolName || s?.title || `School ${index + 1}`).trim(),
-        }))
-        .filter((x) => x._id && x.name);
-
-      console.log("MANUAL PAGE SCHOOLS RAW =", raw);
-      console.log("MANUAL PAGE SCHOOLS NORMALIZED =", list);
-
-      setSchools(list);
-      setSchoolId((prev) => {
-        if (prev && list.some((x) => x._id === prev)) return prev;
-        return list?.[0]?._id || "";
-      });
-    } catch (e) {
-      console.error("loadSchools error =>", e);
-      setSchools([]);
-      setSchoolId("");
-      setSchoolsErr(getApiError(e, "Failed to load schools"));
-    } finally {
-      setSchoolsLoading(false);
-    }
-  }, [cleanToken]);
-
-  useEffect(() => {
-    if (!assignNow) return;
-    loadSchools();
-  }, [assignNow, loadSchools]);
+  // loadSchools is not needed anymore since SchoolClassChecklist fetches internally
 
   const onPickFile = (e) => {
     const f = e.target.files?.[0] || null;
@@ -176,12 +119,12 @@ export default function EducatorManualNew() {
     }
 
     if (assignNow) {
-      if (!schoolId) {
-        alert("Please select School to assign.");
+      if (targetSchools.length === 0) {
+        alert("Please select at least one School to assign.");
         return;
       }
-      if (!classLevel) {
-        alert("Please select Class to assign.");
+      if (targetClasses.length === 0) {
+        alert("Please select at least one Class to assign.");
         return;
       }
     }
@@ -219,8 +162,8 @@ export default function EducatorManualNew() {
           "/educator/manual-assignments",
           {
             manualId,
-            schoolId,
-            classLevel: String(classLevel),
+            targetSchools,
+            targetClasses,
             status: assignStatus,
           },
           {
@@ -417,66 +360,14 @@ export default function EducatorManualNew() {
 
               {assignNow && (
                 <div className="mt-3 grid gap-2">
-                  <div>
-                    <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
-                      <SchoolIcon className="h-4 w-4" /> School
-                    </label>
+                  <SchoolClassChecklist
+                    selectedSchools={targetSchools}
+                    onChangeSchools={setTargetSchools}
+                    selectedClasses={targetClasses}
+                    onChangeClasses={setTargetClasses}
+                  />
 
-                    <select
-                      value={schoolId}
-                      onChange={(e) => setSchoolId(e.target.value)}
-                      className="mt-1 w-full rounded-2xl bg-black/25 border border-white/10 px-3 py-2.5 text-[13px] text-white outline-none"
-                      disabled={schoolsLoading}
-                    >
-                      <option value="" className="text-black">
-                        {schoolsLoading ? "Loading schools..." : "Select School"}
-                      </option>
-
-                      {schools.map((s) => (
-                        <option key={s._id} value={s._id} className="text-black">
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    {schoolsErr ? (
-                      <div className="mt-2 text-[11px] text-red-200/90 font-semibold">
-                        {schoolsErr}
-                        <button
-                          type="button"
-                          onClick={loadSchools}
-                          className="ml-2 underline text-white/80"
-                        >
-                          Retry
-                        </button>
-                      </div>
-                    ) : null}
-
-                    {!schoolsErr ? (
-                      <div className="mt-2 text-[11px] text-white/55 font-semibold">
-                        Schools loaded: <span className="text-white/85 font-black">{schools.length}</span>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4" /> Class
-                      </label>
-                      <select
-                        value={classLevel}
-                        onChange={(e) => setClassLevel(e.target.value)}
-                        className="mt-1 w-full rounded-2xl bg-black/25 border border-white/10 px-3 py-2.5 text-[13px] text-white outline-none"
-                      >
-                        {CLASSES.map((c) => (
-                          <option key={c} value={c} className="text-black">
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
+                  <div className="grid grid-cols-1 gap-2">
                     <div>
                       <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
                         <Link2 className="h-4 w-4" /> Status

@@ -1,10 +1,21 @@
 // src/pages/courses/courses.data.js
 
 export const GRADE_GROUPS = [
-  { id: "g46", label: { en: "Class 4–6", hi: "कक्षा 4–6" } },
-  { id: "g78", label: { en: "Class 7–8", hi: "कक्षा 7–8" } },
-  { id: "g910", label: { en: "Class 9–10", hi: "कक्षा 9–10" } },
-  { id: "g1112", label: { en: "Class 11–12", hi: "कक्षा 11–12" } },
+  { id: "c2", label: { en: "Class 2", hi: "कक्षा 2" } },
+  { id: "c3", label: { en: "Class 3", hi: "कक्षा 3" } },
+  { id: "c4", label: { en: "Class 4", hi: "कक्षा 4" } },
+  { id: "c5", label: { en: "Class 5", hi: "कक्षा 5" } },
+  { id: "c6", label: { en: "Class 6", hi: "कक्षा 6" } },
+  { id: "c7", label: { en: "Class 7", hi: "कक्षा 7" } },
+  { id: "c8", label: { en: "Class 8", hi: "कक्षा 8" } },
+  { id: "c9", label: { en: "Class 9", hi: "कक्षा 9" } },
+  { id: "c10", label: { en: "Class 10", hi: "कक्षा 10" } },
+  { id: "c11", label: { en: "Class 11", hi: "कक्षा 11" } },
+  { id: "c12", label: { en: "Class 12", hi: "कक्षा 12" } },
+  { id: "g46", label: { en: "Class 4–6 (Legacy)", hi: "कक्षा 4–6" } },
+  { id: "g78", label: { en: "Class 7–8 (Legacy)", hi: "कक्षा 7–8" } },
+  { id: "g910", label: { en: "Class 9–10 (Legacy)", hi: "कक्षा 9–10" } },
+  { id: "g1112", label: { en: "Class 11–12 (Legacy)", hi: "कक्षा 11–12" } },
 ];
 
 export const CATEGORIES = [
@@ -44,18 +55,18 @@ export const CATEGORIES = [
     chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   },
   {
+    id: "app",
+    name: { en: "App Development", hi: "ऐप डेवलपमेंट" },
+    icon: "📱",
+    accent: "from-slate-700 via-slate-500 to-sky-400",
+    chip: "bg-slate-50 text-slate-700 ring-slate-200",
+  },
+  {
     id: "python",
     name: { en: "Python Programming", hi: "Python प्रोग्रामिंग" },
     icon: "🐍",
     accent: "from-blue-600 via-sky-500 to-indigo-400",
     chip: "bg-blue-50 text-blue-700 ring-blue-200",
-  },
-  {
-    id: "app",
-    name: { en: "Basic App Designing", hi: "बेसिक ऐप डिज़ाइनिंग" },
-    icon: "📱",
-    accent: "from-slate-700 via-slate-500 to-sky-400",
-    chip: "bg-slate-50 text-slate-700 ring-slate-200",
   },
 ];
 

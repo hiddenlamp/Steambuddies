@@ -15,6 +15,7 @@ const userRoutes = require("./routes/user.routes.js");
 const courseRoutes = require("./routes/courses.routes.js");
 const activitiesRoutes = require("./routes/activities.routes.js");
 const notesRoutes = require("./routes/notes.routes.js");
+const syllabusRoutes = require("./routes/syllabus.routes.js");
 const studentRoutes = require("./routes/student/student.routes.js");
 const educatorRoutes = require("./routes/educatorRoutes.js");
 const adminRoutes = require("./routes/admin.routes.js");
@@ -164,6 +165,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/activities", activitiesRoutes);
 app.use("/api/notes", notesRoutes);
+app.use("/api/syllabus", syllabusRoutes);
 
 app.use("/api/student", studentRoutes);
 app.use("/api/student", studentManualsRoutes);

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, User, Bot, CheckCircle2 } from "lucide-react";
 import { API_BASE_URL } from "../../utils/data";
+import { io } from "socket.io-client";
 
 export default function DoubtChat() {
   const { id } = useParams();
@@ -32,8 +33,15 @@ export default function DoubtChat() {
 
   useEffect(() => {
     fetchDoubt();
-    const interval = setInterval(fetchDoubt, 3000); // Polling for MVP real-time
-    return () => clearInterval(interval);
+    
+    const socket = io(API_BASE_URL.replace("/api", ""));
+    socket.on("new_notification", () => {
+      fetchDoubt();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [id, token]);
 
   useEffect(() => {

@@ -166,7 +166,7 @@ export default function Home() {
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const triggerMascotResponse = (type) => {
+  const triggerMascotResponse = (type, forceLang) => {
     const data = {
       en: {
         fact: [
@@ -202,7 +202,8 @@ export default function Home() {
       }
     };
 
-    const choices = data[language][type];
+    const activeLang = forceLang || language;
+    const choices = data[activeLang][type];
     const picked = choices[Math.floor(Math.random() * choices.length)];
     setMascotMsg(picked);
     
@@ -211,14 +212,39 @@ export default function Home() {
       window.speechSynthesis.cancel();
       setIsSpeaking(true);
       const utterance = new SpeechSynthesisUtterance(picked);
-      const targetLang = language === "hi" ? "hi-IN" : "en-US";
-      const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => v.lang.startsWith(targetLang));
-      if (voice) utterance.voice = voice;
-      utterance.lang = targetLang;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
+      const targetLang = activeLang === "hi" ? "hi-IN" : "en-US";
+      
+      const setVoiceAndSpeak = () => {
+        const voices = window.speechSynthesis.getVoices();
+        // Try to find a fluent Google voice first
+        let voice = voices.find(v => v.lang.startsWith(targetLang) && v.name.includes('Google'));
+        
+        if (!voice && language === "hi") {
+            // Fallback for Hindi (sometimes lang is just 'hi' or name has 'Hindi')
+            voice = voices.find(v => v.lang.includes('hi') || v.name.toLowerCase().includes('hindi'));
+        }
+        
+        if (!voice) {
+          voice = voices.find(v => v.lang.startsWith(targetLang));
+        }
+
+        if (voice) utterance.voice = voice;
+        
+        utterance.lang = targetLang;
+        utterance.rate = 0.85; // Speak a bit slower and more relaxed (arama se)
+        utterance.pitch = 1.0;
+        
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      };
+
+      // Handle async voice loading in some browsers
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.onvoiceschanged = setVoiceAndSpeak;
+      } else {
+        setVoiceAndSpeak();
+      }
     }
   };
 
@@ -1799,6 +1825,12 @@ export default function Home() {
                   💡 {language === "en" ? "Science Fact" : "विज्ञान तथ्य"}
                 </button>
                 <button
+                  onClick={() => triggerMascotResponse("fact", "hi")}
+                  className="px-3 py-2 rounded-xl text-[10px] font-black border text-left flex items-center gap-1 bg-orange-500/10 border-orange-500/20 text-orange-600 dark:text-orange-300"
+                >
+                  🇮🇳 {language === "en" ? "Hindi Fact" : "हिंदी तथ्य"}
+                </button>
+                <button
                   onClick={() => triggerMascotResponse("motivation")}
                   className="px-3 py-2 rounded-xl text-[10px] font-black border text-left flex items-center gap-1 bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-300"
                 >
@@ -1816,7 +1848,7 @@ export default function Home() {
                     setIsSpeaking(false);
                     setMascotMsg(language === "en" ? "Beep boop! Speech cancelled. Select another button." : "बीप बूप! आवाज़ बंद कर दी गई है।");
                   }}
-                  className="px-3 py-2 rounded-xl text-[10px] font-black border text-left flex items-center gap-1 bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-300"
+                  className="col-span-2 px-3 py-2 rounded-xl text-[10px] font-black border text-center justify-center flex items-center gap-1 bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-300"
                 >
                   🔇 {language === "en" ? "Stop Speech" : "आवाज़ रोकें"}
                 </button>

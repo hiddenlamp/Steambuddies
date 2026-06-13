@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, Check, Loader2, Sparkles, Trash2, Users } from "lucide-react";
 import io from "socket.io-client";
 import { API_BASE_URL } from "../../utils/data";
+import SchoolClassChecklist from "../../components/SchoolClassChecklist";
 
 const THEMES = [
   "from-blue-500 to-purple-500",
@@ -26,6 +27,8 @@ export default function ManageReels() {
   const [textContent, setTextContent] = useState("");
   const [bgColor, setBgColor] = useState(THEMES[0]);
   const [caption, setCaption] = useState("");
+  const [targetSchools, setTargetSchools] = useState([]);
+  const [targetClasses, setTargetClasses] = useState([]);
 
   const token = localStorage.getItem("accessToken") || "";
 
@@ -156,6 +159,9 @@ export default function ManageReels() {
           formData.append("mediaUrl", mediaUrl);
         }
       }
+
+      formData.append("targetSchools", JSON.stringify(targetSchools));
+      formData.append("targetClasses", JSON.stringify(targetClasses));
       
       const res = await fetch(`${API_BASE_URL}/reels`, {
         method: "POST",
@@ -170,6 +176,8 @@ export default function ManageReels() {
         setMediaUrl("");
         setTextContent("");
         setCaption("");
+        setTargetSchools([]);
+        setTargetClasses([]);
         fetchReels();
         alert("STEAM Short posted successfully!");
       } else {
@@ -314,6 +322,16 @@ export default function ManageReels() {
                 </div>
               </>
             )}
+
+            {/* Target Schools and Classes */}
+            <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <SchoolClassChecklist
+                selectedSchools={targetSchools}
+                onChangeSchools={setTargetSchools}
+                selectedClasses={targetClasses}
+                onChangeClasses={setTargetClasses}
+              />
+            </div>
 
             <button 
               type="submit" 

@@ -637,9 +637,9 @@ export default function EducatorNotes() {
                       onChange={(e) => setFormTag(e.target.value)}
                       className="mt-1 w-full rounded-2xl px-3 py-3 bg-black/25 border border-white/10 outline-none focus:border-white/20 text-[13px] font-semibold"
                     >
-                      <option value="">Select</option>
+                      <option value="" className="bg-[#0b1020] text-white">Select</option>
                       {tags.map((t) => (
-                        <option key={t} value={t}>
+                        <option key={t} value={t} className="bg-[#0b1020] text-white">
                           {t}
                         </option>
                       ))}
@@ -665,9 +665,9 @@ export default function EducatorNotes() {
                       onChange={(e) => setVisibility(e.target.value)}
                       className="mt-1 w-full rounded-2xl px-3 py-3 bg-black/25 border border-white/10 outline-none focus:border-white/20 text-[13px] font-semibold"
                     >
-                      <option value="all">All Students</option>
-                      <option value="gradeGroup">Grade Group</option>
-                      <option value="course">Course Only</option>
+                      <option value="all" className="bg-[#0b1020] text-white">All Students</option>
+                      <option value="gradeGroup" className="bg-[#0b1020] text-white">Grade Group</option>
+                      <option value="course" className="bg-[#0b1020] text-white">Course Only</option>
                     </select>
                   </div>
 
@@ -679,10 +679,10 @@ export default function EducatorNotes() {
                         onChange={(e) => setGradeGroup(e.target.value)}
                         className="mt-1 w-full rounded-2xl px-3 py-3 bg-black/25 border border-white/10 outline-none focus:border-white/20 text-[13px] font-semibold"
                       >
-                        <option value="g34">Class 3–4</option>
-                        <option value="g56">Class 5–6</option>
-                        <option value="g78">Class 7–8</option>
-                        <option value="g910">Class 9–10</option>
+                        <option value="g34" className="bg-[#0b1020] text-white">Class 3–4</option>
+                        <option value="g56" className="bg-[#0b1020] text-white">Class 5–6</option>
+                        <option value="g78" className="bg-[#0b1020] text-white">Class 7–8</option>
+                        <option value="g910" className="bg-[#0b1020] text-white">Class 9–10</option>
                       </select>
                     </div>
                   )}

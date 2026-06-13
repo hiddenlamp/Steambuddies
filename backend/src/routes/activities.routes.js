@@ -111,9 +111,28 @@ router.get("/feed", async (req, res) => {
     const user = req.user || { id: "guest" };
     const me = userIdOf(user);
     
-    // Fetch activities that haven't expired
+    const studentSchool = user.school || "";
+    const studentClass = user.classLevel || "";
+
+    // Fetch activities that haven't expired and match the student's school and class
     const activities = await Activity.find({
-      $or: [{ expiresAt: { $gt: new Date() } }, { expiresAt: { $exists: false } }]
+      $and: [
+        { $or: [{ expiresAt: { $gt: new Date() } }, { expiresAt: { $exists: false } }] },
+        {
+          $or: [
+            { targetSchools: { $exists: false } },
+            { targetSchools: { $size: 0 } },
+            { targetSchools: studentSchool }
+          ]
+        },
+        {
+          $or: [
+            { targetClasses: { $exists: false } },
+            { targetClasses: { $size: 0 } },
+            { targetClasses: studentClass }
+          ]
+        }
+      ]
     })
     .populate("educator", "fullName name profilePic")
     .sort({ createdAt: -1 })
@@ -166,6 +185,16 @@ router.post("/", requireAuth, uploadSingleSafe("file"), async (req, res) => {
   const type = String(req.body.type || "").toLowerCase();
   const durationSec = Number(req.body.durationSec || 12);
 
+  let targetSchools = [];
+  let targetClasses = [];
+  try {
+    if (req.body.targetSchools) targetSchools = JSON.parse(req.body.targetSchools);
+    if (req.body.targetClasses) targetClasses = JSON.parse(req.body.targetClasses);
+  } catch (e) {
+    if (Array.isArray(req.body.targetSchools)) targetSchools = req.body.targetSchools;
+    if (Array.isArray(req.body.targetClasses)) targetClasses = req.body.targetClasses;
+  }
+
   if (!["video", "image", "text"].includes(type)) {
     return res.status(400).json({ ok: false, message: "Invalid type" });
   }
@@ -193,7 +222,9 @@ router.post("/", requireAuth, uploadSingleSafe("file"), async (req, res) => {
       caption,
       badge,
       durationSec: Math.max(5, Math.min(durationSec, 60)),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      targetSchools,
+      targetClasses
     });
 
     await newActivity.populate("educator", "fullName name profilePic");

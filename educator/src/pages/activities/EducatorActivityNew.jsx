@@ -9,14 +9,12 @@ import {
   Image as Img,
   FileText,
   Save,
-  School as SchoolIcon,
-  GraduationCap,
-  Link2,
   Loader2,
 } from "lucide-react";
 
 import { createActivityApi } from "../../api/activities.api";
 import { api, getApiError } from "../../api/axios";
+import SchoolClassChecklist from "../../components/SchoolClassChecklist";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 const emptyLS = () => ({ en: "", hi: "" });
@@ -40,12 +38,8 @@ export default function EducatorActivityNew() {
   const [preview, setPreview] = useState("");
 
   const [assignNow, setAssignNow] = useState(true);
-  const [schools, setSchools] = useState([]);
-  const [schoolId, setSchoolId] = useState("");
-  const [classLevel, setClassLevel] = useState("");
-  const [assignStatus, setAssignStatus] = useState("active");
-  const [schoolsLoading, setSchoolsLoading] = useState(false);
-  const [schoolsErr, setSchoolsErr] = useState("");
+  const [targetSchools, setTargetSchools] = useState([]);
+  const [targetClasses, setTargetClasses] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: "", msg: "" });
@@ -102,69 +96,7 @@ export default function EducatorActivityNew() {
     });
   };
 
-  const loadSchools = useCallback(async () => {
-  try {
-    setSchoolsErr("");
 
-    if (!token) {
-      setSchools([]);
-      setSchoolId("");
-      setSchoolsErr("Login required. Please login again.");
-      return;
-    }
-
-    setSchoolsLoading(true);
-
-    const res = await api.get("/educator/schools", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Cache-Control": "no-cache",
-      },
-    });
-
-    const data = unwrap(res);
-
-    const raw = Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.schools)
-      ? data.schools
-      : Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data)
-      ? data
-      : [];
-
-    const list = raw
-      .map((s, index) => ({
-        _id: String(s?._id || s?.id || `school-${index}`).trim(),
-        name: String(
-          s?.name || s?.schoolName || s?.title || `School ${index + 1}`
-        ).trim(),
-      }))
-      .filter((x) => x._id && x.name);
-
-    console.log("schools parsed =>", list);
-
-    setSchools(list);
-
-    setSchoolId((prev) => {
-      if (prev && list.some((x) => x._id === prev)) return prev;
-      return "";
-    });
-  } catch (e) {
-    console.error("loadSchools error =>", e);
-    setSchools([]);
-    setSchoolId("");
-    setSchoolsErr(getApiError(e, "Failed to load schools"));
-  } finally {
-    setSchoolsLoading(false);
-  }
-}, [token]);
-
-  useEffect(() => {
-    if (!assignNow) return;
-    loadSchools();
-  }, [assignNow, loadSchools]);
 
   const canSubmit = useMemo(() => {
     const hasText =
@@ -176,11 +108,8 @@ export default function EducatorActivityNew() {
     const hasContent = type === "text" ? !!hasText : !!file;
 
     if (!hasContent) return false;
-    if (assignNow && !schoolId) return false;
-    if (assignNow && !classLevel) return false;
-
     return true;
-  }, [type, title, caption, file, assignNow, schoolId, classLevel]);
+  }, [type, title, caption, file, assignNow, targetSchools, targetClasses]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -189,7 +118,7 @@ export default function EducatorActivityNew() {
     if (!canSubmit) {
       setStatus({
         type: "err",
-        msg: "Please add content and select school/class before posting.",
+        msg: "Please add content before posting.",
       });
       return;
     }
@@ -210,9 +139,8 @@ export default function EducatorActivityNew() {
           title,
           caption,
           badge,
-          schoolId: assignNow ? schoolId : "",
-          classLevel: assignNow ? String(classLevel) : "",
-          status: assignNow ? assignStatus : "active",
+          targetSchools: assignNow ? targetSchools : [],
+          targetClasses: assignNow ? targetClasses : []
         });
       } else {
         const fd = new FormData();
@@ -224,9 +152,8 @@ export default function EducatorActivityNew() {
         fd.append("badge", JSON.stringify(badge));
 
         if (assignNow) {
-          fd.append("schoolId", String(schoolId));
-          fd.append("classLevel", String(classLevel));
-          fd.append("status", String(assignStatus));
+          fd.append("targetSchools", JSON.stringify(targetSchools));
+          fd.append("targetClasses", JSON.stringify(targetClasses));
         }
 
         if (file) fd.append("file", file);
@@ -372,86 +299,13 @@ export default function EducatorActivityNew() {
           </label>
 
           {assignNow && (
-            <div className="mt-3 grid gap-2">
-              <div>
-                <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
-                  <SchoolIcon className="h-4 w-4" /> School
-                </label>
-
-                <select
-                  value={schoolId}
-                  onChange={(e) => setSchoolId(e.target.value)}
-                  className="mt-1 w-full rounded-2xl bg-black/25 border border-white/10 px-3 py-2.5 text-[13px] text-white outline-none"
-                  disabled={schoolsLoading}
-                >
-                  <option value="" className="text-black">
-                    {schoolsLoading ? "Loading schools..." : "Select School"}
-                  </option>
-
-                  {schools.map((s) => (
-                    <option key={s._id} value={s._id} className="text-black">
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-
-                {schoolsErr ? (
-                  <div className="mt-2 text-[11px] text-red-200/90 font-semibold">
-                    {schoolsErr}
-                    <button
-                      type="button"
-                      onClick={loadSchools}
-                      className="ml-2 underline text-white/80"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : (
-                  <div className="mt-2 text-[11px] text-white/55 font-semibold">
-                    Schools loaded: <span className="text-white/85 font-black">{schools.length}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4" /> Class
-                  </label>
-                  <select
-                    value={classLevel}
-                    onChange={(e) => setClassLevel(e.target.value)}
-                    className="mt-1 w-full rounded-2xl bg-black/25 border border-white/10 px-3 py-2.5 text-[13px] text-white outline-none"
-                  >
-                    <option value="" className="text-black">
-                      Select Class
-                    </option>
-                    {CLASSES.map((c) => (
-                      <option key={c} value={c} className="text-black">
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-extrabold text-white/60 flex items-center gap-2">
-                    <Link2 className="h-4 w-4" /> Status
-                  </label>
-                  <select
-                    value={assignStatus}
-                    onChange={(e) => setAssignStatus(e.target.value)}
-                    className="mt-1 w-full rounded-2xl bg-black/25 border border-white/10 px-3 py-2.5 text-[13px] text-white outline-none"
-                  >
-                    <option value="active" className="text-black">Active</option>
-                    <option value="paused" className="text-black">Paused</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="text-[11px] text-white/55 font-semibold">
-                Student UI me sirf isi School + Class ke assigned activities show honi chahiye.
-              </div>
+            <div className="mt-3">
+              <SchoolClassChecklist
+                selectedSchools={targetSchools}
+                onChangeSchools={setTargetSchools}
+                selectedClasses={targetClasses}
+                onChangeClasses={setTargetClasses}
+              />
             </div>
           )}
         </div>

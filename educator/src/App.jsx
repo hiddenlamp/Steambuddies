@@ -23,6 +23,9 @@ import EducatorNotes from "./pages/notes/EducatorNotes";
 // School Courses (Educator)
 import SchoolCourses from "./pages/SchoolCourses";
 
+// Syllabus (Educator)
+import EducatorSyllabus from "./pages/syllabus/EducatorSyllabus";
+
 // Manuals (Educator)
 import EducatorManuals from "./pages/manuals/EducatorManuals";
 import EducatorManualNew from "./pages/manuals/EducatorManualNew";
@@ -99,10 +102,15 @@ export default function App() {
               <Route path="courses/:id/edit" element={<EditCourse />} />
 
               {/* Notes */}
+              <Route path="notes" element={<EducatorNotes />} />
               <Route path="notes/new" element={<EducatorNotes />} />
 
               {/* School Courses */}
               <Route path="school-courses" element={<SchoolCourses />} />
+
+              {/* Syllabus */}
+              <Route path="syllabus" element={<EducatorSyllabus />} />
+              <Route path="syllabus/new" element={<EducatorSyllabus />} />
 
               {/* Manuals */}
               <Route path="manuals" element={<EducatorManuals />} />

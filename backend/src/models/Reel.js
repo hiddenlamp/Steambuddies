@@ -14,6 +14,9 @@ const reelSchema = new mongoose.Schema(
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "approved" },
     schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "School" },
     expiresAt: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) },
+
+    targetSchools: [{ type: String, trim: true }], // If empty, visible to all
+    targetClasses: [{ type: String, trim: true }], // If empty, visible to all
   },
   { timestamps: true }
 );

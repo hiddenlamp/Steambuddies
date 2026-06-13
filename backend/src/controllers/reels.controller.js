@@ -17,6 +17,16 @@ exports.createReel = async (req, res) => {
       initialStatus = "pending";
     }
 
+    let parsedSchools = [];
+    let parsedClasses = [];
+    try {
+      if (req.body.targetSchools) parsedSchools = JSON.parse(req.body.targetSchools);
+      if (req.body.targetClasses) parsedClasses = JSON.parse(req.body.targetClasses);
+    } catch(e) {
+      if (Array.isArray(req.body.targetSchools)) parsedSchools = req.body.targetSchools;
+      if (Array.isArray(req.body.targetClasses)) parsedClasses = req.body.targetClasses;
+    }
+
     const newReel = await Reel.create({
       authorId: user.id,
       mediaType: mediaType || "video",
@@ -25,7 +35,9 @@ exports.createReel = async (req, res) => {
       bgColor,
       caption,
       status: initialStatus,
-      schoolId: user.schoolId || null
+      schoolId: user.schoolId || null,
+      targetSchools: parsedSchools,
+      targetClasses: parsedClasses
     });
     
     // Populate authorId so the frontend gets user info immediately
@@ -94,6 +106,9 @@ exports.getMyReels = async (req, res) => {
 // Get all shorts
 exports.getAllReels = async (req, res) => {
   try {
+    const studentSchool = req.user.school || "";
+    const studentClass = req.user.classLevel || "";
+
     const reels = await Reel.find({
       $and: [
         {
@@ -104,6 +119,20 @@ exports.getAllReels = async (req, res) => {
         },
         {
           $or: [{ expiresAt: { $gt: new Date() } }, { expiresAt: { $exists: false } }]
+        },
+        {
+          $or: [
+            { targetSchools: { $exists: false } },
+            { targetSchools: { $size: 0 } },
+            { targetSchools: studentSchool }
+          ]
+        },
+        {
+          $or: [
+            { targetClasses: { $exists: false } },
+            { targetClasses: { $size: 0 } },
+            { targetClasses: studentClass }
+          ]
         }
       ]
     })

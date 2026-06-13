@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 // Educator: Create a new challenge
 exports.createChallenge = async (req, res) => {
   try {
-    const { question, options, correctOptionIndex, points, theme, targetSchools } = req.body;
+    const { question, options, correctOptionIndex, points, theme, targetSchools, targetClasses } = req.body;
     const newChallenge = await Challenge.create({
       educatorId: req.user.id,
       question,
@@ -15,7 +15,8 @@ exports.createChallenge = async (req, res) => {
       points: points || 40,
       theme: theme || "cyan",
       activeDate: new Date(), // Makes it active for today
-      targetSchools: Array.isArray(targetSchools) ? targetSchools : []
+      targetSchools: Array.isArray(targetSchools) ? targetSchools : [],
+      targetClasses: Array.isArray(targetClasses) ? targetClasses : []
     });
 
     const Notification = require("../models/Notification");
@@ -57,13 +58,25 @@ exports.getTodayChallenges = async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const studentSchool = req.user.school || "";
+    const studentClass = req.user.classLevel || "";
 
     const challenges = await Challenge.find({
       activeDate: { $gte: today, $lt: tomorrow },
-      $or: [
-        { targetSchools: { $exists: false } },
-        { targetSchools: { $size: 0 } },
-        { targetSchools: studentSchool }
+      $and: [
+        {
+          $or: [
+            { targetSchools: { $exists: false } },
+            { targetSchools: { $size: 0 } },
+            { targetSchools: studentSchool }
+          ]
+        },
+        {
+          $or: [
+            { targetClasses: { $exists: false } },
+            { targetClasses: { $size: 0 } },
+            { targetClasses: studentClass }
+          ]
+        }
       ]
     }).populate("educatorId", "fullName").lean();
 

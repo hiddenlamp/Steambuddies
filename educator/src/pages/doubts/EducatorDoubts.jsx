@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { MessageCircle, CheckCircle2, User, Send, Bot } from "lucide-react";
 import { API_BASE_URL } from "../../utils/data";
 import { motion, AnimatePresence } from "framer-motion";
+import { io } from "socket.io-client";
 
 export default function EducatorDoubts() {
   const [doubts, setDoubts] = useState([]);
@@ -28,8 +29,15 @@ export default function EducatorDoubts() {
 
   useEffect(() => {
     fetchDoubts();
-    const interval = setInterval(fetchDoubts, 5000);
-    return () => clearInterval(interval);
+    
+    const socket = io(API_BASE_URL.replace("/api", ""));
+    socket.on("new_notification", () => {
+      fetchDoubts();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [token]);
 
   const activeDoubt = doubts.find(d => d._id === activeDoubtId);

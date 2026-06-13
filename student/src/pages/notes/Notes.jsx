@@ -214,7 +214,11 @@ function Select({ isDark, value, onChange, options = [] }) {
         )}
       >
         {options.map((op) => (
-          <option key={op.value} value={op.value} className="text-slate-900 font-medium">
+          <option 
+            key={op.value} 
+            value={op.value} 
+            className={isDark ? "bg-slate-900 text-white font-medium" : "bg-white text-slate-900 font-medium"}
+          >
             {op.label}
           </option>
         ))}

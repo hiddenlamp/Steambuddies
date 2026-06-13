@@ -12,11 +12,36 @@ const School = require("../../models/SchoolModel");
 /* ---------------- GET assignments ---------------- */
 router.get("/assignments", requireAuth, requireRole("educator"), async (req, res) => {
   try {
-    const { schoolId, classLevel } = req.query;
+    const { schoolId, classLevel, targetSchools, targetClasses } = req.query;
 
     const filter = {};
     if (schoolId) filter.schoolId = schoolId;
     if (classLevel) filter.classLevel = String(classLevel);
+    
+    // Support bulk filtering
+    if (targetSchools) {
+      try {
+        const schoolsArr = JSON.parse(targetSchools);
+        if (schoolsArr.length > 0) {
+          const matchedSchools = await School.find({ name: { $in: schoolsArr } }, "_id").lean();
+          filter.schoolId = { $in: matchedSchools.map(s => s._id) };
+        }
+      } catch (e) {
+        console.error("Failed to parse targetSchools:", e);
+      }
+    }
+    
+    if (targetClasses) {
+      try {
+        const classesArr = JSON.parse(targetClasses);
+        if (classesArr.length > 0) {
+          const numericClasses = classesArr.map(c => String(c).replace(/\D/g, ""));
+          filter.classLevel = { $in: numericClasses };
+        }
+      } catch (e) {
+        console.error("Failed to parse targetClasses:", e);
+      }
+    }
 
     const items = await CourseAssignment.find(filter)
       .populate("courseId")
@@ -48,26 +73,35 @@ router.get("/assignments", requireAuth, requireRole("educator"), async (req, res
 router.post("/assignments", requireAuth, requireRole("educator"), async (req, res) => {
   try {
     const {
-      schoolId,
-      classLevel,
+      targetSchools,
+      targetClasses,
       courseId,
       expectedWeeks = 8,
       status = "pending",
       progressPct = 0,
     } = req.body || {};
 
-    if (!schoolId || !classLevel || !courseId) {
+    let schoolsArray = [];
+    let classesArray = [];
+
+    if (Array.isArray(targetSchools)) schoolsArray = targetSchools;
+    else if (typeof targetSchools === "string") schoolsArray = JSON.parse(targetSchools || "[]");
+
+    if (Array.isArray(targetClasses)) classesArray = targetClasses;
+    else if (typeof targetClasses === "string") classesArray = JSON.parse(targetClasses || "[]");
+
+    if (!schoolsArray.length || !classesArray.length || !courseId) {
       return res.status(400).json({
         ok: false,
-        message: "schoolId, classLevel and courseId are required",
+        message: "targetSchools, targetClasses and courseId are required",
       });
     }
 
-    const school = await School.findById(schoolId).lean();
-    if (!school) {
+    const schools = await School.find({ name: { $in: schoolsArray } }).lean();
+    if (!schools.length) {
       return res.status(404).json({
         ok: false,
-        message: "School not found",
+        message: "Schools not found",
       });
     }
 
@@ -79,43 +113,45 @@ router.post("/assignments", requireAuth, requireRole("educator"), async (req, re
       });
     }
 
-    // duplicate assignment avoid
-    const existing = await CourseAssignment.findOne({
-      schoolId,
-      classLevel: String(classLevel),
-      courseId,
-    }).lean();
+    const createdAssignments = [];
+    const skippedClasses = [];
 
-    if (existing) {
-      return res.status(409).json({
-        ok: false,
-        message: "This course is already assigned to this school/class",
-      });
+    for (const school of schools) {
+      for (const classItem of classesArray) {
+        const numericClass = String(classItem).replace(/\D/g, "");
+
+        // duplicate assignment avoid
+        const existing = await CourseAssignment.findOne({
+          schoolId: school._id,
+          classLevel: numericClass,
+          courseId,
+        }).lean();
+
+        if (existing) {
+          skippedClasses.push(`${school.name} - Class ${numericClass}`);
+          continue;
+        }
+
+        const created = await CourseAssignment.create({
+          schoolId: school._id,
+          classLevel: numericClass,
+          courseId,
+          expectedWeeks: Number(expectedWeeks) || 8,
+          status,
+          progressPct: Number(progressPct) || 0,
+          createdBy: req.user?._id || req.user?.id || null,
+        });
+        
+        createdAssignments.push(created);
+      }
     }
-
-    const created = await CourseAssignment.create({
-      schoolId,
-      classLevel: String(classLevel),
-      courseId,
-      expectedWeeks: Number(expectedWeeks) || 8,
-      status,
-      progressPct: Number(progressPct) || 0,
-      createdBy: req.user?._id || req.user?.id || null,
-    });
-
-    const item = await CourseAssignment.findById(created._id)
-      .populate("courseId")
-      .populate("schoolId", "_id name")
-      .lean();
 
     return res.status(201).json({
       ok: true,
-      item: {
-        ...item,
-        course: item.courseId || null,
-        school: item.schoolId || null,
-      },
-      message: "Course assigned successfully",
+      createdCount: createdAssignments.length,
+      skippedClasses,
+      message: `Course assigned to ${createdAssignments.length} combinations successfully.` + 
+               (skippedClasses.length > 0 ? ` Skipped ${skippedClasses.length} duplicates.` : ""),
     });
   } catch (err) {
     console.error("POST /api/educator/assignments failed:", err);
