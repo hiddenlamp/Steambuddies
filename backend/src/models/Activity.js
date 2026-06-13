@@ -33,7 +33,9 @@ const ActivitySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-ActivitySchema.index({ expiresAt: 1 });
+ActivitySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 ActivitySchema.index({ educator: 1, createdAt: -1 });
 
-module.exports = mongoose.model("Activity", ActivitySchema);
+const Activity = mongoose.model("Activity", ActivitySchema);
+Activity.syncIndexes();
+module.exports = Activity;
