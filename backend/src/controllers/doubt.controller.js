@@ -60,7 +60,7 @@ exports.getDoubts = async (req, res) => {
       const schoolIds = schools.map(s => s._id);
 
       const doubts = await Doubt.find({ schoolId: { $in: schoolIds } })
-        .populate("studentId", "fullName email")
+        .populate("studentId", "fullName email school classLevel")
         .sort({ updatedAt: -1 });
       return res.json({ ok: true, doubts });
     }
@@ -76,7 +76,7 @@ exports.getDoubts = async (req, res) => {
 
 exports.getDoubtById = async (req, res) => {
   try {
-    const doubt = await Doubt.findById(req.params.id).populate("studentId", "fullName email school className");
+    const doubt = await Doubt.findById(req.params.id).populate("studentId", "fullName email school classLevel");
     if (!doubt) return res.status(404).json({ ok: false, message: "Doubt not found" });
     res.json({ ok: true, doubt });
   } catch (error) {

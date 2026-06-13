@@ -111,6 +111,9 @@ export default function EducatorDoubts() {
                   <span className="font-bold text-white text-sm line-clamp-1">
                     {d.studentId?.fullName || "Student"}
                   </span>
+                  <span className="text-[10px] text-white/50 block mb-1">
+                    {d.studentId?.school || "No School"} • {d.classLevel || d.studentId?.classLevel || "General"}
+                  </span>
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${d.status === "open" ? "bg-sky-500/20 text-sky-400" : "bg-emerald-500/20 text-emerald-400"}`}>
                     {d.status.toUpperCase()}
                   </span>

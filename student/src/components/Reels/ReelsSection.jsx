@@ -53,7 +53,7 @@ export default function ReelsSection({ language }) {
               </div>
             </div>
             <p className="text-[10px] md:text-xs text-center font-semibold text-slate-600 dark:text-slate-300 truncate w-16 md:w-20">
-              {reel.educatorId?.fullName || "Educator"}
+              {reel.authorId?.fullName?.split(" ")[0] || "User"}
             </p>
           </div>
         ))}

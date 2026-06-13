@@ -41,7 +41,7 @@ exports.createReel = async (req, res) => {
     });
     
     // Populate authorId so the frontend gets user info immediately
-    await newReel.populate("authorId", "fullName profilePic");
+    await newReel.populate("authorId", "fullName profilePic school classLevel");
 
     if (initialStatus === "approved") {
       const Notification = require("../models/Notification");
@@ -93,7 +93,7 @@ exports.getMyReels = async (req, res) => {
         { $or: [{ expiresAt: { $gt: new Date() } }, { expiresAt: { $exists: false } }] }
       ]
     })
-    .populate("authorId", "fullName profilePic")
+    .populate("authorId", "fullName profilePic school classLevel")
     .populate("viewers", "fullName profilePic name")
     .sort({ createdAt: -1 });
     res.status(200).json({ ok: true, reels });
@@ -136,7 +136,7 @@ exports.getAllReels = async (req, res) => {
         }
       ]
     })
-      .populate("authorId", "fullName profilePic")
+      .populate("authorId", "fullName profilePic school classLevel")
       .populate("viewers", "fullName profilePic name")
       .sort({ createdAt: -1 })
       .lean();
@@ -269,7 +269,7 @@ exports.approveReel = async (req, res) => {
       id,
       { status: "approved" },
       { new: true }
-    ).populate("authorId", "fullName profilePic");
+    ).populate("authorId", "fullName profilePic school classLevel");
     if (!reel) return res.status(404).json({ ok: false, message: "Reel not found" });
 
     // Notify about the approved reel

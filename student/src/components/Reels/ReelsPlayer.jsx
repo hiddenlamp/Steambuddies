@@ -93,9 +93,14 @@ export default function ReelsPlayer({ reels, initialIndex, onClose, token }) {
               <div className="flex-1 pr-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">
-                    {currentReel.educatorId?.fullName?.[0] || "E"}
+                    {currentReel.authorId?.fullName?.[0] || "U"}
                   </div>
-                  <p className="text-white font-bold text-sm">{currentReel.educatorId?.fullName || "Educator"}</p>
+                  <div>
+                    <p className="text-white font-bold text-sm leading-tight">{currentReel.authorId?.fullName || "User"}</p>
+                    <p className="text-white/60 text-[10px] leading-tight">
+                      {currentReel.authorId?.school || "No School"} • {currentReel.authorId?.classLevel || "General"}
+                    </p>
+                  </div>
                 </div>
                 <p className="text-white/90 text-sm line-clamp-3">{currentReel.caption}</p>
               </div>
