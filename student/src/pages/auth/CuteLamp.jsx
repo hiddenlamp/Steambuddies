@@ -82,39 +82,55 @@ export default function CuteLamp({ isOff, inputLength, toggleLight }) {
           stroke="#f8fafc" 
           strokeWidth="4"
           strokeLinecap="round"
+          style={{ filter: "drop-shadow(0px 0px 4px rgba(255,255,255,0.8))" }}
         />
         
         {/* Pull string knob and draggable handle */}
         <motion.g
           className="pointer-events-auto"
           drag="y"
-          dragConstraints={{ top: 0, bottom: 60 }}
-          dragElastic={0.2}
+          dragConstraints={{ top: 0, bottom: 80 }}
+          dragElastic={0.6}
           dragSnapToOrigin={true}
           onDragStart={() => pullY.stop()}
           onDragEnd={(e, info) => {
-            if (info.offset.y > 20 && toggleLight) {
+            if (info.offset.y > 35 && toggleLight) {
+              // Play mechanical click sound
+              try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = "triangle";
+                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+              } catch (err) {}
+
               toggleLight();
             }
           }}
-          onClick={() => {
-            if (toggleLight) toggleLight();
-          }}
           style={{ y: pullY, cursor: "grab", touchAction: "none" }}
-          whileTap={{ cursor: "grabbing" }}
+          whileDrag={{ scale: 1.2 }}
+          whileHover={{ scale: 1.1 }}
         >
-          {/* Visible knob */}
+          {/* Visible knob with glow */}
           <motion.circle
             cx="100"
             cy={baseCy}
-            r="6"
-            fill="#cbd5e1"
+            r="8"
+            fill="#e2e8f0"
+            style={{ filter: "drop-shadow(0px 4px 6px rgba(0,0,0,0.5)) drop-shadow(0px 0px 8px rgba(255,255,255,0.8))" }}
           />
           {/* Invisible hit area for easier dragging */}
           <motion.circle 
             cx="100" 
             cy={baseCy} 
-            r="30" 
+            r="40" 
             fill="transparent" 
           />
         </motion.g>
