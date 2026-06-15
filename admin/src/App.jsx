@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import logo from "./assets/logo.png";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Users, LayoutDashboard, Settings, LogOut, GraduationCap, Presentation, Calendar, FileText, Menu, X } from "lucide-react";
+import { Users, LayoutDashboard, Settings, LogOut, GraduationCap, Presentation, Calendar, FileText, Menu, X, Clock } from "lucide-react";
 import { logoutAdmin } from "./api/auth.api";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -13,6 +13,7 @@ import EducatorManage from "./pages/EducatorManage";
 import EventsManage from "./pages/EventsManage";
 import ReportsManage from "./pages/ReportsManage";
 import OurPeoples from "./pages/OurPeoples";
+import LeaveRequests from "./pages/LeaveRequests";
 
 function SidebarContent({ navigate, location, handleLogout }) {
   const navItems = [
@@ -21,6 +22,7 @@ function SidebarContent({ navigate, location, handleLogout }) {
     { name: "Educators", path: "/admin/educators", icon: Presentation },
     { name: "Events", path: "/admin/events", icon: Calendar },
     { name: "Educator Reports", path: "/admin/reports", icon: FileText },
+    { name: "Leave Requests", path: "/admin/leave-requests", icon: Clock },
   ];
 
   return (
@@ -179,6 +181,7 @@ export default function App() {
           <Route path="educators" element={<EducatorManage />} />
           <Route path="events" element={<EventsManage />} />
           <Route path="reports" element={<ReportsManage />} />
+          <Route path="leave-requests" element={<LeaveRequests />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/admin" replace />} />

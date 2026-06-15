@@ -38,4 +38,30 @@ async function sendResetEmail({ to, name, link }) {
   });
 }
 
-module.exports = { sendResetEmail };
+async function sendLeaveEmailToAdmin({ educatorName, startDate, endDate, reason }) {
+  const transporter = makeTransporter();
+
+  const html = `
+  <div style="font-family:Arial,sans-serif;line-height:1.5">
+    <h2>New Leave Application</h2>
+    <p>Hi Admin,</p>
+    <p>Educator <strong>${educatorName}</strong> has applied for leave.</p>
+    <ul>
+      <li><strong>Start Date:</strong> ${new Date(startDate).toLocaleDateString()}</li>
+      <li><strong>End Date:</strong> ${new Date(endDate).toLocaleDateString()}</li>
+      <li><strong>Reason:</strong> ${reason}</li>
+    </ul>
+    <p>Please log in to the admin dashboard to approve or reject this request.</p>
+  </div>
+  `;
+
+  // Sending to the admin email, which is the same as SMTP_USER for now
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    to: process.env.SMTP_USER,
+    subject: `Leave Request from ${educatorName}`,
+    html,
+  });
+}
+
+module.exports = { sendResetEmail, sendLeaveEmailToAdmin };

@@ -52,6 +52,9 @@ import EducatorDoubts from "./pages/doubts/EducatorDoubts";
 // Profile
 import Profile from "./pages/Profile";
 
+// Leave (Educator)
+import Leave from "./pages/Leave";
+
 import "./styles/globals.css";
 
 // Role guard
@@ -138,6 +141,7 @@ export default function App() {
               <Route path="videos/manage" element={<ManageReels />} />
               <Route path="doubts" element={<EducatorDoubts />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="leave" element={<Leave />} />
             </Route>
 
             {/* 404 */}

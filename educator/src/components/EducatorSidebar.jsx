@@ -33,6 +33,9 @@ export default function EducatorSidebar({ user, onLogout }) {
         <NavLink to="/educator/activities" className={linkClass}>
           Daily Activities (Upload)
         </NavLink>
+        <NavLink to="/educator/leave" className={linkClass}>
+          Leave Application
+        </NavLink>
       </nav>
 
       <button

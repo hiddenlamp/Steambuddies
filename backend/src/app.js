@@ -191,6 +191,7 @@ app.use("/api/reports", require("./routes/reports.routes.js"));
 app.use("/api/challenges", require("./routes/challenges.routes.js"));
 app.use("/api/reels", require("./routes/reels.routes.js"));
 app.use("/api/doubts", require("./routes/doubt.routes.js"));
+app.use("/api/leave", require("./routes/leave.routes.js"));
 
 /** =========================
  * 404 + Error handler
