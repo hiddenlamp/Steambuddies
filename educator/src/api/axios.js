@@ -126,8 +126,10 @@ api.interceptors.response.use(
 
     const isRefreshCall =
       typeof original.url === "string" && original.url.includes("/auth/refresh");
+    const isLoginCall =
+      typeof original.url === "string" && original.url.includes("/auth/login");
 
-    if (status === 401 && !original._retry && !isRefreshCall) {
+    if (status === 401 && !original._retry && !isRefreshCall && !isLoginCall) {
       original._retry = true;
 
       if (isRefreshing) {

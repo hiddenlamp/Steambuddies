@@ -22,7 +22,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+    const isLoginCall = error.config && typeof error.config.url === "string" && error.config.url.includes("/auth/login");
+    if (error.response && (error.response.status === 401 || error.response.status === 403) && !isLoginCall) {
       localStorage.removeItem("steambuddies_token");
       localStorage.removeItem("steambuddies_user");
       window.location.href = "/login";
