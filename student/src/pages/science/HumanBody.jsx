@@ -296,7 +296,7 @@ export default function HumanBody() {
       metric: "20K Breaths/day",
       colorTheme: "cyan",
       textureUrl: "/assets/organs/organ_lungs_1780044799792.png",
-      sketchfabId: "a1a8c3e8cd864388836ec3bfa09930cb", // Example lungs
+      sketchfabId: "ad1a6c31b37547fabfc9fe37af69796b", // From user screenshot
       desc: "A highly porous dual-chamber gas exchange manifold. It extracts atmospheric oxygen while simultaneously venting toxic carbon dioxide accumulated from cellular combustion.",
       stats: { "Surface Area": "70 sq meters", "Capacity": "6 Liters", "Alveoli": "480 Million" }
     },
