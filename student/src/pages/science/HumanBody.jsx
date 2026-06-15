@@ -268,7 +268,7 @@ export default function HumanBody() {
       metric: "86B Neurons",
       colorTheme: "pink",
       textureUrl: "/assets/organs/organ_brain_1780044762656.png",
-      sketchfabId: "cc8bb05a76e94af084e3a47dafb03f8a", // Example brain
+      sketchfabId: "a7dfbefa02304316966533b3736815bf", // From user
       desc: "The hyper-complex neural processor of the human machine. It synthesizes data, controls motor functions, and generates consciousness through vast electrochemical networks.",
       stats: { "Synapses": "100 Trillion", "Energy Use": "20 Watts", "Signal Speed": "120 m/s" }
     },
