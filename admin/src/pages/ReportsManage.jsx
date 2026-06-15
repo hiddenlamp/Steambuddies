@@ -75,8 +75,8 @@ export default function ReportsManage() {
     school: [],
     educator: [],
     className: [],
-    month: "",
-    year: "",
+    month: [],
+    year: [],
   });
 
   const [selectedReport, setSelectedReport] = useState(null);
@@ -113,14 +113,12 @@ export default function ReportsManage() {
 
   const uniqueYears = [...new Set(reports.map(r => {
     const d = new Date(r.visitDate);
-    return isNaN(d.getTime()) ? null : d.getFullYear();
+    return isNaN(d.getTime()) ? null : d.getFullYear().toString();
   }).filter(Boolean))].sort((a, b) => b - a);
 
   const monthsList = [
-    { value: "0", label: "January" }, { value: "1", label: "February" }, { value: "2", label: "March" },
-    { value: "3", label: "April" }, { value: "4", label: "May" }, { value: "5", label: "June" },
-    { value: "6", label: "July" }, { value: "7", label: "August" }, { value: "8", label: "September" },
-    { value: "9", label: "October" }, { value: "10", label: "November" }, { value: "11", label: "December" }
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
   ];
 
   // --- Filtering Logic ---
@@ -142,10 +140,10 @@ export default function ReportsManage() {
 
     const d = new Date(r.visitDate);
     if (!isNaN(d.getTime())) {
-      if (filters.year && d.getFullYear().toString() !== filters.year) return false;
-      if (filters.month && d.getMonth().toString() !== filters.month) return false;
+      if (filters.year.length > 0 && !filters.year.includes(d.getFullYear().toString())) return false;
+      if (filters.month.length > 0 && !filters.month.includes(monthsList[d.getMonth()])) return false;
     } else {
-      if (filters.year || filters.month) return false;
+      if (filters.year.length > 0 || filters.month.length > 0) return false;
     }
 
     return true;
@@ -523,23 +521,19 @@ export default function ReportsManage() {
             onChange={v => setFilters({...filters, className: v})} 
           />
 
-          <select 
-            value={filters.month} 
-            onChange={e => setFilters({...filters, month: e.target.value})}
-            className={selectClasses}
-          >
-            <option value="" className={optionClasses}>All Months</option>
-            {monthsList.map(m => <option key={m.value} value={m.value} className={optionClasses}>{m.label}</option>)}
-          </select>
+          <MultiSelectDropdown 
+            label="Months" 
+            options={monthsList} 
+            selectedValues={filters.month} 
+            onChange={v => setFilters({...filters, month: v})} 
+          />
 
-          <select 
-            value={filters.year} 
-            onChange={e => setFilters({...filters, year: e.target.value})}
-            className={selectClasses}
-          >
-            <option value="" className={optionClasses}>All Years</option>
-            {uniqueYears.map(y => <option key={y} value={y} className={optionClasses}>{y}</option>)}
-          </select>
+          <MultiSelectDropdown 
+            label="Years" 
+            options={uniqueYears} 
+            selectedValues={filters.year} 
+            onChange={v => setFilters({...filters, year: v})} 
+          />
         </div>
       </div>
 
