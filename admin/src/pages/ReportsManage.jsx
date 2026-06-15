@@ -252,7 +252,7 @@ export default function ReportsManage() {
           <div className="p-8 text-black w-[1000px] mx-auto bg-white" id="images-printable-overlay-content">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-black uppercase tracking-widest border-b-4 border-black pb-2 inline-block">
-                {filters.educator ? `Photos: ${filters.educator}` : filters.school ? `Photos: ${filters.school}` : "Educator Visit Photos"}
+                {filters.school ? `Photos: ${filters.school}` : filters.educator ? `Photos: ${filters.educator}` : "Educator Visit Photos"}
               </h1>
               <p className="text-gray-600 font-bold mt-2">
                 Generated on {new Date().toLocaleDateString()}
@@ -276,7 +276,11 @@ export default function ReportsManage() {
                 });
               });
 
-              const dateKeys = Object.keys(allImagesByDate);
+              const dateKeys = Object.keys(allImagesByDate).sort((a, b) => {
+                const [d1, m1, y1] = a.split('-');
+                const [d2, m2, y2] = b.split('-');
+                return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
+              });
 
               if (dateKeys.length === 0) {
                 return <p className="text-center text-lg font-bold">No photos found.</p>;
