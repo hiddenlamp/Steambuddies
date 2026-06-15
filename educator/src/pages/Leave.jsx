@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { applyLeave, getMyLeaves } from "../api/leave.api";
-import { Calendar, Plus, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Plus, Clock, CheckCircle, XCircle, ChevronLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const cn = (...s) => s.filter(Boolean).join(" ");
 
 export default function Leave() {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ startDate: "", endDate: "", reason: "" });
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,148 +38,190 @@ export default function Leave() {
       const res = await applyLeave(formData);
       if (res.success) {
         alert("Leave applied successfully! Admin has been notified.");
-        setShowModal(false);
+        setShowForm(false);
         setFormData({ startDate: "", endDate: "", reason: "" });
         fetchLeaves();
+      } else {
+        alert(res.message || "Failed to apply leave");
       }
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.message || "Failed to apply leave");
+      alert(error?.response?.data?.message || error?.message || "Failed to apply leave");
     } finally {
       setSubmitting(false);
     }
   };
 
   const getStatusIcon = (status) => {
-    if (status === "Approved") return <CheckCircle className="w-5 h-5 text-green-500" />;
-    if (status === "Rejected") return <XCircle className="w-5 h-5 text-red-500" />;
-    return <Clock className="w-5 h-5 text-yellow-500" />;
+    if (status === "Approved") return <CheckCircle className="w-4 h-4" />;
+    if (status === "Rejected") return <XCircle className="w-4 h-4" />;
+    return <Clock className="w-4 h-4" />;
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full gap-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/5 border border-white/10 p-5 rounded-[22px] backdrop-blur-md">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-blue-400" /> My Leaves
+          <h1 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
+            <Calendar className="w-6 h-6 text-sky-400" />
+            Leave Application
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Apply for leave and track your status</p>
+          <p className="text-xs md:text-sm text-white/60 mt-1 font-semibold">
+            Apply for new leaves and track your previous requests.
+          </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition"
-        >
-          <Plus className="w-4 h-4" /> Apply Leave
-        </button>
-      </div>
-
-      <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-400">Loading leaves...</div>
-        ) : leaves.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">You haven't applied for any leave yet.</div>
+        
+        {!showForm ? (
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-white/10 hover:bg-white/15 border border-white/10 text-white px-5 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 transition"
+          >
+            <Plus className="w-4 h-4 text-sky-400" /> Apply Leave
+          </button>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-300">
-              <thead className="text-xs uppercase bg-white/5 text-gray-400">
-                <tr>
-                  <th className="px-4 py-3">Start Date</th>
-                  <th className="px-4 py-3">End Date</th>
-                  <th className="px-4 py-3">Reason</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Admin Remark</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaves.map((leave) => (
-                  <tr key={leave._id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="px-4 py-3 font-medium text-white">{new Date(leave.startDate).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 font-medium text-white">{new Date(leave.endDate).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 max-w-xs truncate" title={leave.reason}>{leave.reason}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 font-semibold">
-                        {getStatusIcon(leave.status)}
-                        <span className={
-                          leave.status === "Approved" ? "text-green-500" :
-                          leave.status === "Rejected" ? "text-red-500" : "text-yellow-500"
-                        }>{leave.status}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 max-w-xs truncate text-gray-400" title={leave.adminRemark || "-"}>{leave.adminRemark || "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <button
+            onClick={() => setShowForm(false)}
+            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-5 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 transition"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back to List
+          </button>
         )}
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#151521] border border-white/10 w-full max-w-md rounded-2xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Apply for Leave</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white">
-                <XCircle className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full bg-[#0b1020] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                  />
+      <div className="flex-1 overflow-hidden relative">
+        <AnimatePresence mode="wait">
+          {showForm ? (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="bg-white/[0.04] border border-white/10 rounded-[22px] p-6 md:p-8"
+            >
+              <h2 className="text-lg font-black text-white mb-6">New Leave Request</h2>
+              <form onSubmit={handleSubmit} className="space-y-5 max-w-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-white/70 uppercase tracking-wider">Start Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-white/70 uppercase tracking-wider">End Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">End Date</label>
-                  <input
-                    type="date"
+                
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-white/70 uppercase tracking-wider">Reason</label>
+                  <textarea
                     required
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full bg-[#0b1020] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                  />
+                    rows="4"
+                    value={formData.reason}
+                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                    placeholder="Briefly explain your reason for leave..."
+                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 resize-none transition"
+                  ></textarea>
                 </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Reason</label>
-                <textarea
-                  required
-                  rows="3"
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  placeholder="Why do you need leave?"
-                  className="w-full bg-[#0b1020] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 resize-none"
-                ></textarea>
-              </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 font-semibold transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition disabled:opacity-50"
-                >
-                  {submitting ? "Applying..." : "Submit Leave"}
-                </button>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-gradient-to-r from-sky-500 to-indigo-500 text-white px-8 py-3 rounded-2xl text-sm font-black shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 transition disabled:opacity-50"
+                  >
+                    {submitting ? "Submitting..." : "Submit Application"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="bg-white/5 border border-white/10 text-white/80 px-8 py-3 rounded-2xl text-sm font-bold hover:bg-white/10 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="h-full"
+            >
+              <div className="bg-white/[0.03] border border-white/10 rounded-[22px] overflow-hidden">
+                {loading ? (
+                  <div className="p-12 text-center text-white/40 font-semibold animate-pulse">Loading history...</div>
+                ) : leaves.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 border border-white/10">
+                      <Calendar className="w-8 h-8 text-white/40" />
+                    </div>
+                    <p className="text-white/80 font-bold text-base">No leave applications found.</p>
+                    <p className="text-white/50 text-sm mt-1">When you apply for leave, it will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-white/80">
+                      <thead className="bg-black/20 text-white/50 text-[11px] font-black uppercase tracking-wider">
+                        <tr>
+                          <th className="px-6 py-4">Dates</th>
+                          <th className="px-6 py-4">Reason</th>
+                          <th className="px-6 py-4">Status</th>
+                          <th className="px-6 py-4">Admin Remark</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {leaves.map((leave) => (
+                          <tr key={leave._id} className="hover:bg-white/5 transition">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="font-bold text-white">{new Date(leave.startDate).toLocaleDateString()}</div>
+                              <div className="text-xs text-white/40 mt-0.5">to {new Date(leave.endDate).toLocaleDateString()}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="max-w-xs truncate text-white/90 font-medium" title={leave.reason}>
+                                {leave.reason}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={cn(
+                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black border",
+                                leave.status === "Approved" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                                leave.status === "Rejected" ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
+                                "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                              )}>
+                                {getStatusIcon(leave.status)}
+                                {leave.status}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="max-w-xs truncate text-white/60 text-xs font-medium" title={leave.adminRemark || "None"}>
+                                {leave.adminRemark || "—"}
+                              </p>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
