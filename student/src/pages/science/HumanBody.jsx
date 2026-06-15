@@ -310,7 +310,7 @@ export default function HumanBody() {
       metric: "500+ Functions",
       colorTheme: "amber",
       textureUrl: "/assets/organs/organ_liver_1780044814941.png",
-      sketchfabId: "5e243dbfdd5c4ec4807469b82875ab94", // Example liver
+      sketchfabId: "08ee1a75c6fa437297848027c1baa94c", // From user
       desc: "The body's primary biochemical laboratory and filtration plant. It neutralizes toxins, synthesizes vital proteins, and manages nutrient distribution protocols.",
       stats: { "Regeneration": "High", "Bile Prod": "1 L/day", "Storage": "Glycogen & Iron" }
     },
@@ -324,7 +324,7 @@ export default function HumanBody() {
       metric: "200L Filtered/day",
       colorTheme: "yellow",
       textureUrl: "/assets/organs/organ_kidneys_1780044836641.png",
-      sketchfabId: "bbdfef5a2e9b41a7b451df6c94d0e6ba", // Example kidneys
+      sketchfabId: "41ea3ed891cc41a997964d6a9cb95cd4", // From user
       desc: "A dual-unit osmotic filtration system. It maintains blood homeostasis by extracting toxic urea and regulating the body's electrolyte balance.",
       stats: { "Nephrons": "2 Million", "Urine Prod": "1.5 L/day", "Control": "Blood Pressure" }
     },
@@ -338,23 +338,23 @@ export default function HumanBody() {
       metric: "10M Colors",
       colorTheme: "blue",
       textureUrl: "/assets/organs/organ_eyes_1780044852435.png",
-      sketchfabId: "d634db89dc424e83a743c3a07b713b1a", // Example eye
+      sketchfabId: "edfdbf89074f49228cd4f2e3ed584578", // From user
       desc: "High-resolution binaural optical sensors that capture photons, process stereoscopic depth, and stream exabytes of visual data to the neural cortex.",
       stats: { "Rods/Cones": "120M / 6M", "Resolution": "576 Megapixels", "Update": "1000 Hz" }
     },
     {
-      id: "nose",
-      name: "Olfactory Array",
-      tag: "Chemical Sensor",
-      weight: "10 g",
-      function: "Scent Detection",
-      bloodFlow: "50 ml/min",
-      metric: "1 Trillion Scents",
+      id: "ear",
+      name: "Auditory System",
+      tag: "Acoustic Sensor",
+      weight: "N/A",
+      function: "Sound & Balance",
+      bloodFlow: "Low",
+      metric: "20Hz - 20kHz",
       colorTheme: "purple",
       textureUrl: "/assets/organs/organ_nose_1780044868493.png",
-      sketchfabId: "a2b00cd09f1947b198889ec189914cc7", // Example nose/anatomy
-      desc: "A sophisticated chemical analysis chamber that detects airborne molecular structures, linking directly to the brain's memory and emotion centers.",
-      stats: { "Receptors": "400 Types", "Neurons": "6 Million", "Airflow": "10,000 L/day" }
+      sketchfabId: "c3e65826b8ac48f9ba472d5a384813ad", // From user
+      desc: "A complex biomechanical array that transduces pressure waves into neural signals, while simultaneously providing spatial orientation and balance.",
+      stats: { "Hair Cells": "15,000", "Bones": "3 Ossicles", "Sensitivity": "0 dB SPL" }
     }
   ];
 
