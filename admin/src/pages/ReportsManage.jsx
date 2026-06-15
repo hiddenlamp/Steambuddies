@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { getDailyReports } from "../api/reports.api";
 import { FileText, Search, MapPin, Users, Lightbulb, Pickaxe, Calendar, User, Eye, X, Download, Image as ImageIcon } from "lucide-react";
 import html2pdf from "html2pdf.js";
@@ -15,6 +15,56 @@ const formatDateLong = (dateString) => {
   return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(new Date(dateString));
 };
 
+const MultiSelectDropdown = ({ label, options, selectedValues, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleOption = (opt) => {
+    if (selectedValues.includes(opt)) {
+      onChange(selectedValues.filter(v => v !== opt));
+    } else {
+      onChange([...selectedValues, opt]);
+    }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        onClick={() => setOpen(!open)}
+        className="w-full bg-[#151521] border border-white/5 rounded-lg py-2.5 px-3 text-sm text-white cursor-pointer flex justify-between items-center h-[42px]"
+      >
+        <span className="truncate pr-2 font-semibold">
+          {selectedValues.length === 0 ? `All ${label}` : `${selectedValues.length} Selected`}
+        </span>
+        <span className="text-gray-400 text-xs">▼</span>
+      </div>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-[#0b1020] border border-white/10 rounded-lg shadow-xl p-2 custom-scrollbar">
+          {options.map(opt => (
+            <label key={opt} className="flex items-start gap-2 p-2 hover:bg-white/5 rounded cursor-pointer text-sm text-white">
+              <input 
+                type="checkbox" 
+                checked={selectedValues.includes(opt)}
+                onChange={() => toggleOption(opt)}
+                className="mt-1 w-4 h-4 rounded bg-gray-900 border-gray-600 focus:ring-blue-500 focus:ring-2 flex-shrink-0"
+              />
+              <span className="break-words">{opt}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function ReportsManage() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,9 +72,9 @@ export default function ReportsManage() {
   // Search & Filters State
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
-    school: "",
-    educator: "",
-    className: "",
+    school: [],
+    educator: [],
+    className: [],
     month: "",
     year: "",
   });
@@ -82,12 +132,12 @@ export default function ReportsManage() {
       if (!schoolMatch && !educatorMatch) return false;
     }
 
-    if (filters.school && r.schoolName !== filters.school) return false;
-    if (filters.educator && r.educator?.fullName !== filters.educator) return false;
+    if (filters.school.length > 0 && !filters.school.includes(r.schoolName)) return false;
+    if (filters.educator.length > 0 && !filters.educator.includes(r.educator?.fullName)) return false;
     
-    if (filters.className) {
+    if (filters.className.length > 0) {
       const cTaught = (r.classesTaught || "").split(",").map(c => c.trim());
-      if (!cTaught.includes(filters.className)) return false;
+      if (!filters.className.some(c => cTaught.includes(c))) return false;
     }
 
     const d = new Date(r.visitDate);
@@ -146,7 +196,7 @@ export default function ReportsManage() {
 
       const opt = {
         margin:       0.4,
-        filename:     `Summary_Report_${filters.school ? filters.school.replace(/\s+/g, '_') : 'All_Schools'}_${new Date().getTime()}.pdf`,
+        filename:     `Summary_Report_${filters.school.length === 1 ? filters.school[0].replace(/\s+/g, '_') : filters.school.length > 1 ? 'Selected_Schools' : 'All_Schools'}_${new Date().getTime()}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, windowWidth: 1200 },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
@@ -170,7 +220,7 @@ export default function ReportsManage() {
 
       const opt = {
         margin:       0.4,
-        filename:     `Photos_${filters.school ? filters.school.replace(/\s+/g, '_') : 'All_Schools'}_${new Date().getTime()}.pdf`,
+        filename:     `Photos_${filters.school.length === 1 ? filters.school[0].replace(/\s+/g, '_') : filters.school.length > 1 ? 'Selected_Schools' : 'All_Schools'}_${new Date().getTime()}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, windowWidth: 1000 },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
@@ -252,7 +302,7 @@ export default function ReportsManage() {
           <div className="p-8 text-black w-[1000px] mx-auto bg-white" id="images-printable-overlay-content">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-black uppercase tracking-widest border-b-4 border-black pb-2 inline-block">
-                {filters.school ? `Photos: ${filters.school}` : filters.educator ? `Photos: ${filters.educator}` : "Educator Visit Photos"}
+                {filters.school.length === 1 ? `Photos: ${filters.school[0]}` : filters.school.length > 1 ? `Photos: Selected Schools` : filters.educator.length === 1 ? `Photos: ${filters.educator[0]}` : "Educator Visit Photos"}
               </h1>
               <p className="text-gray-600 font-bold mt-2">
                 Generated on {new Date().toLocaleDateString()}
@@ -260,23 +310,27 @@ export default function ReportsManage() {
             </div>
 
             {(() => {
-              const allImagesByDate = {};
+              const allImagesByDateAndClass = {};
               filteredReports.forEach(report => {
                 if (!report.images || report.images.length === 0) return;
                 const dateObj = new Date(report.visitDate);
                 const dateStr = isNaN(dateObj.getTime()) ? "N/A" : `${dateObj.getDate().toString().padStart(2, '0')}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}-${dateObj.getFullYear()}`;
                 
-                if (!allImagesByDate[dateStr]) allImagesByDate[dateStr] = [];
+                if (!allImagesByDateAndClass[dateStr]) allImagesByDateAndClass[dateStr] = {};
+                
+                const cTaught = report.classesTaught || "Unknown Class";
+                if (!allImagesByDateAndClass[dateStr][cTaught]) allImagesByDateAndClass[dateStr][cTaught] = [];
+
                 report.images.forEach(imgUrl => {
-                  allImagesByDate[dateStr].push({ 
+                  allImagesByDateAndClass[dateStr][cTaught].push({ 
                     url: imgUrl, 
-                    school: report.schoolId?.name || report.school, 
-                    educator: report.educatorId?.name || report.educator 
+                    school: report.schoolName || "Unknown School", 
+                    educator: report.educator?.fullName || "Unknown Educator" 
                   });
                 });
               });
 
-              const dateKeys = Object.keys(allImagesByDate).sort((a, b) => {
+              const dateKeys = Object.keys(allImagesByDateAndClass).sort((a, b) => {
                 const [d1, m1, y1] = a.split('-');
                 const [d2, m2, y2] = b.split('-');
                 return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
@@ -287,28 +341,33 @@ export default function ReportsManage() {
               }
 
               return dateKeys.map(dateStr => (
-                <div key={dateStr} className="mb-12">
+                <div key={dateStr} className="mb-12" style={{ pageBreakInside: 'avoid' }}>
                   <h2 className="text-2xl font-bold bg-gray-200 p-3 border border-black uppercase mb-6">Date: {dateStr}</h2>
-                  <div className="grid grid-cols-2 gap-6">
-                    {allImagesByDate[dateStr].map((imgObj, i) => (
-                      <div key={i} className="border border-gray-300 p-2 break-inside-avoid text-center">
-                        <img 
-                          src={`${BACKEND_URL}${imgObj.url}`} 
-                          crossOrigin="anonymous"
-                          alt={`Visit Photo ${i + 1}`} 
-                          className="w-full h-80 object-contain bg-gray-50 mx-auto"
-                          onError={(e) => { 
-                            if (!e.target.src.includes('steambuddies.onrender.com')) {
-                              e.target.src = `https://steambuddies.onrender.com${imgObj.url}`;
-                            } else {
-                              e.target.style.display = 'none'; 
-                            }
-                          }}
-                        />
-                        <p className="mt-3 text-sm font-bold text-gray-700">{imgObj.school}</p>
-                      </div>
-                    ))}
-                  </div>
+                  {Object.keys(allImagesByDateAndClass[dateStr]).map(className => (
+                     <div key={className} className="mb-6 border-l-4 border-gray-400 pl-4 ml-2">
+                        <h3 className="text-xl font-bold text-gray-700 mb-4 underline decoration-gray-400 underline-offset-4">Class: {className}</h3>
+                        <div className="grid grid-cols-2 gap-6">
+                          {allImagesByDateAndClass[dateStr][className].map((imgObj, i) => (
+                            <div key={i} className="border border-gray-300 p-2 break-inside-avoid text-center bg-white shadow-sm rounded-lg">
+                              <img 
+                                src={`${BACKEND_URL}${imgObj.url}`} 
+                                crossOrigin="anonymous"
+                                alt={`Visit Photo ${i + 1}`} 
+                                className="w-full aspect-[4/3] object-cover bg-gray-50 mx-auto border-b border-gray-200 rounded-t-lg"
+                                onError={(e) => { 
+                                  if (!e.target.src.includes('steambuddies.onrender.com')) {
+                                    e.target.src = `https://steambuddies.onrender.com${imgObj.url}`;
+                                  } else {
+                                    e.target.style.display = 'none'; 
+                                  }
+                                }}
+                              />
+                              <p className="py-2 text-sm font-bold text-gray-700">{imgObj.school}</p>
+                            </div>
+                          ))}
+                        </div>
+                     </div>
+                  ))}
                 </div>
               ));
             })()}
@@ -443,32 +502,26 @@ export default function ReportsManage() {
 
         {/* Dropdowns */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <select 
-            value={filters.school} 
-            onChange={e => setFilters({...filters, school: e.target.value})}
-            className={selectClasses}
-          >
-            <option value="" className={optionClasses}>All Schools</option>
-            {uniqueSchools.map(s => <option key={s} value={s} className={optionClasses}>{s}</option>)}
-          </select>
+          <MultiSelectDropdown 
+            label="Schools" 
+            options={uniqueSchools} 
+            selectedValues={filters.school} 
+            onChange={v => setFilters({...filters, school: v})} 
+          />
 
-          <select 
-            value={filters.educator} 
-            onChange={e => setFilters({...filters, educator: e.target.value})}
-            className={selectClasses}
-          >
-            <option value="" className={optionClasses}>All Educators</option>
-            {uniqueEducators.map(ed => <option key={ed} value={ed} className={optionClasses}>{ed}</option>)}
-          </select>
+          <MultiSelectDropdown 
+            label="Educators" 
+            options={uniqueEducators} 
+            selectedValues={filters.educator} 
+            onChange={v => setFilters({...filters, educator: v})} 
+          />
 
-          <select 
-            value={filters.className} 
-            onChange={e => setFilters({...filters, className: e.target.value})}
-            className={selectClasses}
-          >
-            <option value="" className={optionClasses}>All Classes</option>
-            {uniqueClasses.map(c => <option key={c} value={c} className={optionClasses}>{c}</option>)}
-          </select>
+          <MultiSelectDropdown 
+            label="Classes" 
+            options={uniqueClasses} 
+            selectedValues={filters.className} 
+            onChange={v => setFilters({...filters, className: v})} 
+          />
 
           <select 
             value={filters.month} 
