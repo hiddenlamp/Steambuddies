@@ -23,7 +23,8 @@ import {
   StickyNote,
   School,
   Target,
-  MessageCircle
+  MessageCircle,
+  CalendarClock
 } from "lucide-react";
 import { API_BASE_URL } from "../utils/data";
 import NotificationBell from "../components/shared/NotificationBell";
@@ -61,6 +62,7 @@ function meta(pathname) {
   if (pathname.startsWith("/educator/challenges")) return { title: "Challenges", sub: "Post daily MCQ challenges." };
   if (pathname.startsWith("/educator/reels")) return { title: "STEAM Shorts", sub: "Manage short video reels." };
   if (pathname.startsWith("/educator/doubts")) return { title: "Doubts Console", sub: "Resolve student doubts and chat." };
+  if (pathname.startsWith("/educator/leave")) return { title: "Leave Application", sub: "Apply and track leaves." };
   return { title: "Educator", sub: "Manage your teaching workspace." };
 }
 
@@ -232,6 +234,7 @@ function Sidebar({ user, counts, activeKey, onNav, onLogout }) {
           <PillNav icon={Target} label="Challenges" badge={counts?.challenges ?? 0} active={activeKey === "/educator/challenges"} onClick={() => onNav("/educator/challenges")} />
           <PillNav icon={Video} label="STEAM Shorts" badge={counts?.reels ?? 0} active={activeKey === "/educator/reels"} onClick={() => onNav("/educator/reels")} />
           <PillNav icon={MessageCircle} label="Doubt Chat" badge="NEW" active={activeKey === "/educator/doubts"} onClick={() => onNav("/educator/doubts")} />
+          <PillNav icon={CalendarClock} label="Leave Application" active={activeKey === "/educator/leave"} onClick={() => onNav("/educator/leave")} />
         </div>
 
         <button
@@ -325,6 +328,7 @@ export default function EducatorLayout() {
     if (pathname.startsWith("/educator/reels")) return "/educator/reels";
     if (pathname.startsWith("/educator/doubts")) return "/educator/doubts";
     if (pathname.startsWith("/educator/reports")) return "/educator/reports/new";
+    if (pathname.startsWith("/educator/leave")) return "/educator/leave";
     return "/educator";
   }, [pathname]);
 

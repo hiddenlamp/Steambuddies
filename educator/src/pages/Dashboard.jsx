@@ -14,12 +14,13 @@ import {
   StickyNote,
   School,
   Target,
+  CalendarClock,
 } from "lucide-react";
 import STEAMShortsSection from "../components/STEAMShorts/STEAMShortsSection";
 
 const cn = (...s) => s.filter(Boolean).join(" ");
 
-function ActionCards({ onCourse, onSchoolCourses, onMock, onProject, onManual, onSyllabus, onNote, onReport, onChallenges, onReels }) {
+function ActionCards({ onCourse, onSchoolCourses, onMock, onProject, onManual, onSyllabus, onNote, onReport, onChallenges, onReels, onLeave }) {
   const Card = ({ title, desc, icon: Icon, tone, btnText, onClick }) => (
     <motion.div
       whileHover={{ y: -3 }}
@@ -89,6 +90,9 @@ function ActionCards({ onCourse, onSchoolCourses, onMock, onProject, onManual, o
       <Card title="STEAM Shorts" desc="Post short vertical videos for students." icon={Video}
         tone="bg-[radial-gradient(circle_at_30%_30%,rgba(168,85,247,0.2),transparent_60%)]"
         btnText="Post Reel" onClick={onReels} />
+      <Card title="Leave Application" desc="Apply for leave and track your status." icon={CalendarClock}
+        tone="bg-[radial-gradient(circle_at_30%_30%,rgba(236,72,153,0.18),transparent_60%)]"
+        btnText="Apply Leave" onClick={onLeave} />
     </div>
   );
 }
@@ -125,6 +129,7 @@ export default function Dashboard() {
         onReport={() => nav("/educator/reports/new")}
         onChallenges={() => nav("/educator/challenges")}
         onReels={() => nav("/educator/reels")}
+        onLeave={() => nav("/educator/leave")}
       />
     </div>
   );
