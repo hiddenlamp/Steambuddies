@@ -409,27 +409,7 @@ export default function HumanBody() {
                 <div className={`absolute inset-0 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-${organ.colorTheme}-500/50 to-transparent`} style={{ padding: '1px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'exclude' }}></div>
                 <div className="w-full md:w-[45%] h-64 md:h-80 relative bg-black/40 rounded-[1.8rem] overflow-hidden flex items-center justify-center border border-white/5">
                    
-                   {organ.sketchfabId ? (
-                      <div className="w-full h-full relative z-10 pointer-events-auto">
-                        <iframe 
-                           title={organ.name}
-                           frameBorder="0" 
-                           allowFullScreen 
-                           mozallowfullscreen="true" 
-                           webkitallowfullscreen="true" 
-                           allow="autoplay; fullscreen; xr-spatial-tracking" 
-                           xr-spatial-tracking="true" 
-                           execution-while-out-of-viewport="true" 
-                           execution-while-not-rendered="true" 
-                           web-share="true" 
-                           src={`https://sketchfab.com/models/${organ.sketchfabId}/embed?autostart=1&ui_theme=dark&transparent=1&ui_infos=0&ui_watermark=0&ui_controls=0`}
-                           className="w-full h-full pointer-events-none scale-125"
-                        ></iframe>
-                        <div className="absolute inset-0 z-20 cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedOrgan(organ); }}></div>
-                      </div>
-                   ) : (
-                      <ThreeOrganOrb organ={organ} />
-                   )}
+                   <ThreeOrganOrb organ={organ} />
                    
                    <div className={`absolute inset-0 bg-${organ.colorTheme}-500/10 blur-[50px] pointer-events-none`}></div>
                    <div className="absolute top-4 left-4 text-[9px] font-mono text-white/50 uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-black/50 backdrop-blur-sm z-20 pointer-events-none">ID: {organ.id.toUpperCase()}</div>
