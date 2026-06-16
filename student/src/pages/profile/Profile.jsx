@@ -692,7 +692,7 @@ export default function Profile() {
       : "bg-[radial-gradient(1200px_600px_at_30%_0%,rgba(56,189,248,.20),transparent_60%),radial-gradient(900px_450px_at_80%_20%,rgba(232,121,249,.20),transparent_55%),radial-gradient(900px_450px_at_10%_70%,rgba(52,211,153,.18),transparent_55%),linear-gradient(to_bottom,#f8fafc,#f6f7ff)] text-slate-900";
 
   return (
-    <div className={cn("min-h-screen", pageBg)}>
+    <div className={cn("min-h-screen md:pl-28 md:pr-8", pageBg)}>
       {/* background glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <motion.div
