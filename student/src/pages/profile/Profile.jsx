@@ -721,7 +721,7 @@ export default function Profile() {
         />
       </div>
 
-      <main className="relative mx-auto w-full max-w-[1450px] px-4 sm:px-6 md:px-10 lg:px-12 xl:px-16 2xl:px-24 py-10">
+      <main className="relative mx-auto w-full max-w-[1450px] px-4 sm:px-6 md:px-10 lg:px-12 xl:px-16 2xl:px-24 pt-10 pb-28 lg:pb-10">
         {/* header */}
         <motion.section variants={fadeUp} initial="hidden" animate="show" className="mx-auto max-w-4xl text-center">
           <div
@@ -736,7 +736,7 @@ export default function Profile() {
             <span>{t.kicker}</span>
           </div>
 
-          <h1 className="mt-3 text-balance text-4xl font-black tracking-tight md:text-6xl">
+          <h1 className="mt-3 text-balance text-3xl font-black tracking-tight md:text-5xl lg:text-6xl">
             {t.titleA}{" "}
             <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-lime-300 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(52,211,153,0.45)]">
   {t.titleB}
@@ -860,7 +860,7 @@ export default function Profile() {
               <Glass theme={theme} className="p-6">
                 <div className={cn("h-4 w-40 rounded", theme === "dark" ? "bg-white/10" : "bg-black/10")} />
                 <div className={cn("mt-3 h-8 w-72 rounded", theme === "dark" ? "bg-white/10" : "bg-black/10")} />
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className={cn("h-20 rounded-2xl border", theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/70 border-black/5")} />
                   ))}
